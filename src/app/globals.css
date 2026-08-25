@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+}
+
+@theme inline {
+  --color-gazie-paper: #FBF7EE;
+  --color-gazie-navy: #14213D;
+  --color-gazie-yellow: #FFC93C;
+  --color-gazie-green: #2D6A4F;
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space-grotesk);
+  --font-mono: var(--font-space-mono);
+}
+
+:root {
+  --background: #FBF7EE;
+  --foreground: #14213D;
+}
+
+body {
+  background-color: #FBF7EE;
+  color: #14213D;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* Custom transitions and interactive touches */
+.transition-all-custom {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom dashed border for tickets */
+.border-dashed-perforated {
+  background-image: linear-gradient(to right, #14213D 60%, rgba(255, 255, 255, 0) 0%);
+  background-position: top;
+  background-size: 8px 2px;
+  background-repeat: repeat-x;
+  height: 2px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
