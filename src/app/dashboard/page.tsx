@@ -35,15 +35,27 @@ export default function DashboardRedirect() {
           return;
         }
 
+        // Check if user confirmed their email via magic link or signup confirmation
+        const isEmailConfirmed = !!(session.user.email_confirmed_at || (session.user as any).confirmed_at || session.user.user_metadata?.email_verified);
+
         if (profile.verification_status === 'pending_email') {
-          setStatusText('Email verification required. Redirecting...');
-          setTimeout(() => {
-            router.push('/login');
-          }, 1500);
-          return;
+          if (isEmailConfirmed) {
+            // Automatically upgrade status to email_verified
+            await supabase
+              .from('profiles')
+              .update({ verification_status: 'email_verified' })
+              .eq('id', userId);
+            profile.verification_status = 'email_verified';
+          } else {
+            setStatusText('Email verification required. Please check your inbox or spam folder.');
+            setTimeout(() => {
+              router.push('/login');
+            }, 2500);
+            return;
+          }
         }
 
-        setStatusText(`Redirecting to ${profile.role} dashboard...`);
+        setStatusText(`Welcome ${session.user.user_metadata?.full_name || 'Commuter'}! Redirecting to ${profile.role} dashboard...`);
 
         // Redirect based on role
         if (profile.role === 'admin') {
