@@ -46,6 +46,13 @@ function LoginFormContent() {
   const [availableTimeWindow, setAvailableTimeWindow] = useState('07:30 AM - 08:30 AM');
   const [driverFare, setDriverFare] = useState('1000');
 
+  const formatAuthError = (message: string) => {
+    if (/rate.*exceed|email.*rate|too many/i.test(message)) {
+      return 'Gazie email verification is temporarily busy. Please try again later, or message us on WhatsApp at 08164737221 so we can help complete your onboarding.';
+    }
+    return message;
+  };
+
   useEffect(() => {
     // Check url parameter
     const urlRole = searchParams.get('role');
@@ -160,7 +167,7 @@ function LoginFormContent() {
       });
 
       if (authError) {
-        setError(authError.message);
+        setError(formatAuthError(authError.message));
         setLoading(false);
         return;
       }
