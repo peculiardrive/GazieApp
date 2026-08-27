@@ -4,11 +4,7 @@ import { ShieldCheck, LogOut, User, ShieldAlert, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-interface Profile {
-  full_name: string;
-  role: string;
-  verification_status: 'pending' | 'verified' | 'rejected';
-}
+import { Profile } from '@/types';
 
 export default function Navbar() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -62,14 +58,20 @@ export default function Navbar() {
     switch (profile.verification_status) {
       case 'verified':
         return (
-          <span className="inline-flex items-center gap-1 bg-[#2D6A4F]/10 text-gazie-green border border-gazie-green/20 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider animate-pulse">
+          <span className="inline-flex items-center gap-1 bg-[#2D6A4F]/10 text-gazie-green border border-gazie-green/20 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider">
             <ShieldCheck className="w-3.5 h-3.5" /> VERIFIED
           </span>
         );
-      case 'pending':
+      case 'pending_review':
         return (
           <span className="inline-flex items-center gap-1 bg-gazie-yellow/10 text-amber-700 border border-gazie-yellow/20 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider">
-            <Shield className="w-3.5 h-3.5" /> PENDING VERIFICATION
+            <Shield className="w-3.5 h-3.5" /> UNDER REVIEW
+          </span>
+        );
+      case 'email_verified':
+        return (
+          <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider">
+            <Shield className="w-3.5 h-3.5" /> UNVERIFIED
           </span>
         );
       case 'rejected':

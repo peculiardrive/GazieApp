@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/ui/Navbar';
+import Toast, { useToast } from '@/components/ui/Toast';
 import { Users, Car, HeartHandshake, ShieldCheck, ShieldAlert, FileText, Check, X, Link as LinkIcon, ExternalLink, Calendar, Clock, Bookmark, ArrowRight, TrendingUp, MapPin, BarChart3, Activity, Pencil, Save } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -12,6 +13,9 @@ export default function AdminDashboard() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [incidents, setIncidents] = useState<any[]>([]);
+
+  // Toast notifications
+  const { toasts, showToast, dismissToast } = useToast();
 
   // Postings state
   const [postings, setPostings] = useState<any[]>([]);
@@ -92,12 +96,12 @@ export default function AdminDashboard() {
         .eq('id', profileId);
 
       if (error) {
-        alert('Verification update failed: ' + error.message);
+        showToast('Verification update failed: ' + error.message, 'error');
       } else {
         fetchAdminData();
       }
     } catch (err: any) {
-      alert(err.message || 'Error occurred during verification');
+      showToast(err.message || 'Error occurred during verification', 'error');
     }
   };
 
@@ -126,13 +130,13 @@ export default function AdminDashboard() {
         .eq('id', editingUser.id);
 
       if (error) {
-        alert('Failed to save: ' + error.message);
+        showToast('Failed to save: ' + error.message, 'error');
       } else {
         setEditingUser(null);
         fetchAdminData();
       }
     } catch (err: any) {
-      alert(err.message || 'Save failed');
+      showToast(err.message || 'Save failed', 'error');
     } finally {
       setEditSaving(false);
     }
@@ -299,6 +303,9 @@ export default function AdminDashboard() {
   return (
     <div className="flex flex-col min-h-screen bg-gazie-paper text-gazie-navy">
       <Navbar />
+
+      {/* Toast notifications */}
+      <Toast toasts={toasts} onDismiss={dismissToast} />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6 space-y-6">
 

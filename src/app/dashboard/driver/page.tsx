@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, syncRecurringPostings } from '@/lib/supabase';
 import Navbar from '@/components/ui/Navbar';
 import Ticket from '@/components/ui/Ticket';
+import Toast, { useToast } from '@/components/ui/Toast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { MapPin, Clock, Calendar, AlertTriangle, ShieldAlert, BadgeCheck, Car, Landmark, Trash2, Power, Plus, ArrowRight, FileText } from 'lucide-react';
 import VerificationModal from '@/components/ui/VerificationModal';
 
@@ -14,6 +16,26 @@ export default function DriverDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+
+  // Toast notifications
+  const { toasts, showToast, dismissToast } = useToast();
+
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    danger?: boolean;
+    onConfirm: () => void;
+  }>({ open: false, title: '', message: '', onConfirm: () => {} });
+
+  const openConfirm = useCallback((title: string, message: string, onConfirm: () => void, danger = false) => {
+    setConfirmDialog({ open: true, title, message, danger, onConfirm });
+  }, []);
+
+  const closeConfirm = useCallback(() => {
+    setConfirmDialog(prev => ({ ...prev, open: false }));
+  }, []);
 
   // Form edit states
   const [usualRoute, setUsualRoute] = useState('');
@@ -164,7 +186,7 @@ export default function DriverDashboard() {
       return;
     }
     if (!postPickup || !postDestination || !postDate || !postTime || !postSeats || !postFare) {
-      alert('Please fill in all fields');
+      showToast('Please fill in all required fields.', 'warning');
       return;
     }
 
@@ -190,7 +212,7 @@ export default function DriverDashboard() {
           });
         
         if (tempError) {
-          alert('Failed to save recurring template: ' + tempError.message);
+          showToast('Failed to save recurring template: ' + tempError.message, 'error');
         } else if (newTemplate && newTemplate.length > 0) {
           templateId = newTemplate[0].id;
         }
@@ -214,9 +236,9 @@ export default function DriverDashboard() {
         });
 
       if (postError) {
-        alert('Failed to post ride: ' + postError.message);
+        showToast('Failed to post ride: ' + postError.message, 'error');
       } else {
-        alert('Ride posted successfully!');
+        showToast('Ride posted successfully!', 'success');
         
         // Trigger notifications for riders who prefer this route
         const { data: profiles } = await supabase.from('profiles').select('*').eq('role', 'rider');
@@ -246,7 +268,7 @@ export default function DriverDashboard() {
         fetchDriverData();
       }
     } catch (err: any) {
-      alert(err.message || 'An error occurred');
+      showToast(err.message || 'An error occurred', 'error');
     } finally {
       setPostLoading(false);
     }
@@ -264,52 +286,59 @@ export default function DriverDashboard() {
       if (hoursRemaining < 2) {
         const hasConfirmedBookings = bookings.some(b => b.ride_posting_id === postingId && (b.status === 'confirmed' || b.status === 'matched'));
         if (hasConfirmedBookings) {
-          alert("Cannot cancel this ride posting within 2 hours of departure because riders have already confirmed matching commutes.");
+          showToast('Cannot cancel this ride posting within 2 hours of departure because riders have already confirmed matching commutes.', 'warning');
           return;
         }
       }
     }
 
-    if (!confirm('Are you sure you want to cancel this ride posting? Any riders currently matched will be notified.')) return;
-    try {
-      const { error } = await supabase
-        .from('ride_postings')
-        .update({ status: 'cancelled' })
-        .eq('id', postingId);
+    openConfirm(
+      'Cancel Ride Posting',
+      'Are you sure you want to cancel this ride posting? Any riders currently matched will be notified.',
+      async () => {
+        closeConfirm();
+        try {
+          const { error } = await supabase
+            .from('ride_postings')
+            .update({ status: 'cancelled' })
+            .eq('id', postingId);
 
-      if (error) {
-        alert('Failed to cancel posting: ' + error.message);
-      } else {
-        // Also cancel any bookings linked to this posting!
-        const { data: bookingsData } = await supabase
-          .from('bookings')
-          .select('id, rider_id, status')
-          .eq('ride_posting_id', postingId);
-        
-        if (bookingsData && bookingsData.length > 0) {
-          for (const booking of bookingsData) {
-            if (booking.status === 'confirmed' || booking.status === 'matched' || booking.status === 'requested' || booking.status === 'pending') {
-              await supabase
-                .from('bookings')
-                .update({ status: 'cancelled' })
-                .eq('id', booking.id);
+          if (error) {
+            showToast('Failed to cancel posting: ' + error.message, 'error');
+          } else {
+            // Also cancel any bookings linked to this posting!
+            const { data: bookingsData } = await supabase
+              .from('bookings')
+              .select('id, rider_id, status')
+              .eq('ride_posting_id', postingId);
 
-              // Notify Rider
-              await supabase.from('notifications').insert({
-                user_id: booking.rider_id,
-                title: 'Ride Cancelled by Driver',
-                message: `The ride matched on your route has been cancelled by the driver. Please search and book another commute.`,
-                read: false
-              });
+            if (bookingsData && bookingsData.length > 0) {
+              for (const booking of bookingsData) {
+                if (booking.status === 'confirmed' || booking.status === 'matched' || booking.status === 'requested' || booking.status === 'pending') {
+                  await supabase
+                    .from('bookings')
+                    .update({ status: 'cancelled' })
+                    .eq('id', booking.id);
+
+                  // Notify Rider
+                  await supabase.from('notifications').insert({
+                    user_id: booking.rider_id,
+                    title: 'Ride Cancelled by Driver',
+                    message: `The ride matched on your route has been cancelled by the driver. Please search and book another commute.`,
+                    read: false
+                  });
+                }
+              }
             }
+
+            fetchDriverData();
           }
+        } catch (err: any) {
+          showToast(err.message || 'Error occurred', 'error');
         }
-        
-        fetchDriverData();
-      }
-    } catch (err: any) {
-      alert(err.message || 'Error occurred');
-    }
+      },
+      true
+    );
   };
 
   const handleToggleTemplate = async (templateId: string, currentActive: boolean) => {
@@ -320,31 +349,38 @@ export default function DriverDashboard() {
         .eq('id', templateId);
 
       if (error) {
-        alert('Failed to toggle template: ' + error.message);
+        showToast('Failed to toggle template: ' + error.message, 'error');
       } else {
         fetchDriverData();
       }
     } catch (err: any) {
-      alert(err.message || 'Error occurred');
+      showToast(err.message || 'Error occurred', 'error');
     }
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
-    if (!confirm('Delete this recurring template? No further next-day rides will be auto-generated from it.')) return;
-    try {
-      const { error } = await supabase
-        .from('recurring_templates')
-        .delete()
-        .eq('id', templateId);
+    openConfirm(
+      'Delete Template',
+      'Delete this recurring template? No further next-day rides will be auto-generated from it.',
+      async () => {
+        closeConfirm();
+        try {
+          const { error } = await supabase
+            .from('recurring_templates')
+            .delete()
+            .eq('id', templateId);
 
-      if (error) {
-        alert('Failed to delete template: ' + error.message);
-      } else {
-        fetchDriverData();
-      }
-    } catch (err: any) {
-      alert(err.message || 'Error occurred');
-    }
+          if (error) {
+            showToast('Failed to delete template: ' + error.message, 'error');
+          } else {
+            fetchDriverData();
+          }
+        } catch (err: any) {
+          showToast(err.message || 'Error occurred', 'error');
+        }
+      },
+      true
+    );
   };
 
   const handleCompleteBooking = async (bookingId: string) => {
@@ -355,12 +391,12 @@ export default function DriverDashboard() {
         .eq('id', bookingId);
 
       if (error) {
-        alert('Failed to complete ride: ' + error.message);
+        showToast('Failed to complete ride: ' + error.message, 'error');
       } else {
         fetchDriverData();
       }
     } catch (err: any) {
-      alert(err.message || 'Error completing booking');
+      showToast(err.message || 'Error completing booking', 'error');
     }
   };
 
@@ -376,26 +412,33 @@ export default function DriverDashboard() {
       const hoursRemaining = timeDiffMs / (1000 * 60 * 60);
 
       if (hoursRemaining < 2) {
-        alert("Cannot cancel passenger match within 2 hours of scheduled departure time.");
+        showToast('Cannot cancel passenger match within 2 hours of scheduled departure time.', 'warning');
         return;
       }
     }
 
-    if (!confirm('Are you sure you want to cancel this booking? Passenger will see that the match was cancelled.')) return;
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status: 'cancelled' })
-        .eq('id', bookingId);
+    openConfirm(
+      'Cancel Passenger Match',
+      'Are you sure you want to cancel this booking? Passenger will see that the match was cancelled.',
+      async () => {
+        closeConfirm();
+        try {
+          const { error } = await supabase
+            .from('bookings')
+            .update({ status: 'cancelled' })
+            .eq('id', bookingId);
 
-      if (error) {
-        alert('Failed to cancel match: ' + error.message);
-      } else {
-        fetchDriverData();
-      }
-    } catch (err: any) {
-      alert(err.message || 'Error cancelling booking');
-    }
+          if (error) {
+            showToast('Failed to cancel match: ' + error.message, 'error');
+          } else {
+            fetchDriverData();
+          }
+        } catch (err: any) {
+          showToast(err.message || 'Error cancelling booking', 'error');
+        }
+      },
+      true
+    );
   };
 
   if (loading) {
@@ -417,6 +460,19 @@ export default function DriverDashboard() {
   return (
     <div className="flex flex-col min-h-screen bg-gazie-paper text-gazie-navy">
       <Navbar />
+
+      {/* Toast notifications */}
+      <Toast toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Confirm dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        danger={confirmDialog.danger}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirm}
+      />
 
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-6 space-y-6">
 

@@ -29,15 +29,6 @@ const initializeMockDb = () => {
         created_at: new Date().toISOString(),
       },
       {
-        id: 'admin-uuid-peculiar',
-        phone: '07036639658',
-        full_name: 'Peculiar Admin',
-        role: 'admin',
-        verification_status: 'verified',
-        preferred_routes: [],
-        created_at: new Date().toISOString(),
-      },
-      {
         id: 'rider-uuid-2222',
         phone: '09022222222',
         full_name: 'Obinna Rider',
@@ -106,8 +97,8 @@ const initializeMockDb = () => {
     const demoAuthUsers = demoProfiles.map(p => ({
       id: p.id,
       phone: p.phone,
-      email: p.phone === '07036639658' ? 'gaziecommute@gmail.com' : `${p.phone}@gazie.com`,
-      password: p.phone === '07036639658' ? 'N3xtG3N@77%' : 'password123'
+      email: `${p.phone}@gazie.com`,
+      password: 'password123'
     }));
 
     localStorage.setItem(profilesKey, JSON.stringify(demoProfiles));

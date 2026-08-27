@@ -13,19 +13,47 @@ const cleanArea = (name: string): string => {
   return name.split(',')[0].trim();
 };
 
-export async function GET() {
+// Simple IP-based rate limiting helper
+const rateLimitMap = new Map<string, { count: number; expiresAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || entry.expiresAt < now) {
+    rateLimitMap.set(ip, { count: 1, expiresAt: now + 60_000 }); // 1 min window
+    return false;
+  }
+  if (entry.count >= 60) { // max 60 req/min
+    return true;
+  }
+  entry.count += 1;
+  return false;
+}
+
+export async function GET(req: Request) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'anon';
+  if (isRateLimited(ip)) {
+    return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 });
+  }
+
   if (isMock) {
-    // Return realistic mock data for local server representation
-    return NextResponse.json({
-      ridesMatchedToday: 2,
-      verifiedRiders: 15,
-      verifiedDrivers: 6,
-      mostActiveRouteToday: "Lugbe → Wuse",
-      recentActivity: [
-        { route: "Lugbe → Wuse", createdAt: new Date(Date.now() - 3 * 60 * 1000).toISOString() },
-        { route: "Lugbe → CBD", createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString() }
-      ]
-    });
+    return NextResponse.json(
+      {
+        ridesMatchedToday: 2,
+        verifiedRiders: 15,
+        verifiedDrivers: 6,
+        mostActiveRouteToday: "Lugbe → Wuse",
+        recentActivity: [
+          { route: "Lugbe → Wuse", createdAt: new Date(Date.now() - 3 * 60 * 1000).toISOString() },
+          { route: "Lugbe → CBD", createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString() }
+        ]
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=45'
+        }
+      }
+    );
   }
 
   try {
@@ -82,15 +110,23 @@ export async function GET() {
       createdAt: b.created_at
     }));
 
-    return NextResponse.json({
-      ridesMatchedToday: bookingsToday?.length || 0,
-      verifiedRiders: verifiedRidersCount || 0,
-      verifiedDrivers: verifiedDriversCount || 0,
-      mostActiveRouteToday,
-      recentActivity
-    });
-  } catch (err: any) {
+    return NextResponse.json(
+      {
+        ridesMatchedToday: bookingsToday?.length || 0,
+        verifiedRiders: verifiedRidersCount || 0,
+        verifiedDrivers: verifiedDriversCount || 0,
+        mostActiveRouteToday,
+        recentActivity
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=20, stale-while-revalidate=60'
+        }
+      }
+    );
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Internal Server Error';
     console.error('Error fetching live activity:', err);
-    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

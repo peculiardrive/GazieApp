@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, syncRecurringPostings, confirmMatch, isMock } from '@/lib/supabase';
 import Navbar from '@/components/ui/Navbar';
 import Ticket from '@/components/ui/Ticket';
+import Toast, { useToast } from '@/components/ui/Toast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { MapPin, Clock, Calendar, AlertTriangle, ShieldAlert, Phone, Bell, CheckSquare, Search, Sparkles, UserCheck, ArrowRight, FileText } from 'lucide-react';
 import Script from 'next/script';
 import VerificationModal from '@/components/ui/VerificationModal';
@@ -15,6 +17,26 @@ export default function RiderDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+
+  // Toast notifications
+  const { toasts, showToast, dismissToast } = useToast();
+
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    danger?: boolean;
+    onConfirm: () => void;
+  }>({ open: false, title: '', message: '', onConfirm: () => {} });
+
+  const openConfirm = useCallback((title: string, message: string, onConfirm: () => void, danger = false) => {
+    setConfirmDialog({ open: true, title, message, danger, onConfirm });
+  }, []);
+
+  const closeConfirm = useCallback(() => {
+    setConfirmDialog(prev => ({ ...prev, open: false }));
+  }, []);
 
   // Payment verification hooks
   const [paymentProcessing, setPaymentProcessing] = useState(false);
@@ -37,19 +59,19 @@ export default function RiderDashboard() {
           clearInterval(interval);
           setPaymentProcessing(false);
           setPaymentBookingId(null);
-          alert('Payment verified! Your match has been unlocked.');
+          showToast('Payment verified! Your match has been unlocked.', 'success');
           fetchRiderData();
         } else if (booking && booking.status === 'payment_failed') {
           clearInterval(interval);
           setPaymentProcessing(false);
           setPaymentBookingId(null);
-          alert('Unlock confirmation failed. Please retry.');
+          showToast('Unlock confirmation failed. Please retry.', 'error');
           fetchRiderData();
         } else if (attempts >= maxAttempts) {
           clearInterval(interval);
           setPaymentProcessing(false);
           setPaymentBookingId(null);
-          alert('Verification is taking longer than expected. We will notify you once confirmed.');
+          showToast('Verification is taking longer than expected. We will notify you once confirmed.', 'warning');
           fetchRiderData();
         }
       } catch (err) {
@@ -60,13 +82,13 @@ export default function RiderDashboard() {
 
   const triggerPaystackCheckout = (bookingId: string, posting: any, riderEmail: string) => {
     if (typeof window === 'undefined' || !(window as any).PaystackPop) {
-      alert('Payment gateway is loading. Please try again.');
+      showToast('Payment gateway is loading. Please try again.', 'warning');
       return;
     }
 
     const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
     if (!publicKey) {
-      alert('Payment gateway configuration is missing.');
+      showToast('Payment gateway configuration is missing. Please contact support.', 'error');
       return;
     }
 
@@ -82,14 +104,14 @@ export default function RiderDashboard() {
         pollBookingStatus(bookingId);
       },
       onClose: function() {
-        alert('Checkout cancelled.');
+        showToast('Checkout cancelled.', 'info');
       }
     });
     handler.openIframe();
   };
 
   const triggerMockCheckout = (bookingId: string, postingId: string) => {
-    const paySuccessful = confirm("[MOCK PAYMENT] Simulating ₦50 platform unlock checkout.\n\nClick OK to simulate charge.success\nClick Cancel to simulate charge.failed");
+    const paySuccessful = window.confirm("[MOCK PAYMENT] Simulating ₦50 platform unlock checkout.\n\nClick OK to simulate charge.success\nClick Cancel to simulate charge.failed");
     
     if (paySuccessful) {
       const postingsKey = 'gazie_ride_postings';
@@ -102,13 +124,13 @@ export default function RiderDashboard() {
 
       const bookingIndex = bookingsList.findIndex((b: any) => b.id === bookingId);
       if (bookingIndex === -1) {
-        alert('Booking record not found.');
+        showToast('Booking record not found.', 'error');
         return;
       }
 
       const postingIndex = postingsList.findIndex((p: any) => p.id === postingId);
       if (postingIndex === -1) {
-        alert('Posting not found.');
+        showToast('Posting not found.', 'error');
         return;
       }
 
@@ -116,7 +138,7 @@ export default function RiderDashboard() {
       if (posting.seats_available <= 0) {
         bookingsList[bookingIndex].status = 'payment_failed';
         localStorage.setItem(bookingsKey, JSON.stringify(bookingsList));
-        alert('Seats are no longer available. Match failed.');
+        showToast('Seats are no longer available. Match failed.', 'error');
         fetchRiderData();
         return;
       }
@@ -166,7 +188,7 @@ export default function RiderDashboard() {
       localStorage.setItem(bookingsKey, JSON.stringify(bookingsList));
       localStorage.setItem(notificationsKey, JSON.stringify(notificationsList));
 
-      alert('Mock Payment Success! Ride match unlocked.');
+      showToast('Mock Payment Success! Ride match unlocked.', 'success');
       fetchRiderData();
     } else {
       const bookingsKey = 'gazie_bookings';
@@ -176,7 +198,7 @@ export default function RiderDashboard() {
         bookingsList[bookingIndex].status = 'payment_failed';
         localStorage.setItem(bookingsKey, JSON.stringify(bookingsList));
       }
-      alert('Mock Payment Failed.');
+      showToast('Mock Payment Failed.', 'error');
       fetchRiderData();
     }
   };
@@ -367,45 +389,52 @@ export default function RiderDashboard() {
       const hoursRemaining = timeDiffMs / (1000 * 60 * 60);
 
       if (hoursRemaining < 2) {
-        alert("Cannot cancel booking within 2 hours of scheduled departure time.");
+        showToast('Cannot cancel booking within 2 hours of scheduled departure time.', 'warning');
         return;
       }
     }
 
-    if (!confirm('Are you sure you want to cancel this booking?')) return;
-    try {
-      if ((booking.status === 'confirmed' || booking.status === 'matched') && booking.ride_posting_id) {
-        const { data: postingData } = await supabase
-          .from('ride_postings')
-          .select('*')
-          .eq('id', booking.ride_posting_id)
-          .single();
+    openConfirm(
+      'Cancel Booking',
+      'Are you sure you want to cancel this booking?',
+      async () => {
+        closeConfirm();
+        try {
+          if ((booking.status === 'confirmed' || booking.status === 'matched') && booking.ride_posting_id) {
+            const { data: postingData } = await supabase
+              .from('ride_postings')
+              .select('*')
+              .eq('id', booking.ride_posting_id)
+              .single();
 
-        if (postingData) {
-          const updatedSeats = postingData.seats_available + 1;
-          await supabase
-            .from('ride_postings')
-            .update({
-              seats_available: updatedSeats,
-              status: 'active'
-            })
-            .eq('id', booking.ride_posting_id);
+            if (postingData) {
+              const updatedSeats = postingData.seats_available + 1;
+              await supabase
+                .from('ride_postings')
+                .update({
+                  seats_available: updatedSeats,
+                  status: 'active'
+                })
+                .eq('id', booking.ride_posting_id);
+            }
+          }
+
+          const { error } = await supabase
+            .from('bookings')
+            .update({ status: 'cancelled' })
+            .eq('id', bookingId);
+
+          if (error) {
+            showToast('Failed to cancel booking: ' + error.message, 'error');
+          } else {
+            fetchRiderData();
+          }
+        } catch (err: any) {
+          showToast(err.message || 'Error occurred while cancelling', 'error');
         }
-      }
-
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status: 'cancelled' })
-        .eq('id', bookingId);
-
-      if (error) {
-        alert('Failed to cancel booking: ' + error.message);
-      } else {
-        fetchRiderData();
-      }
-    } catch (err: any) {
-      alert(err.message || 'Error occurred while cancelling');
-    }
+      },
+      true
+    );
   };
 
   const handleRequestRidePosting = async (posting: any) => {
@@ -419,7 +448,7 @@ export default function RiderDashboard() {
       if (!user) return;
 
       if (posting.seats_available <= 0) {
-        alert('This ride posting is already full!');
+        showToast('This ride posting is already full!', 'warning');
         return;
       }
 
@@ -427,7 +456,7 @@ export default function RiderDashboard() {
         b => b.ride_posting_id === posting.id && b.status !== 'cancelled' && b.status !== 'payment_failed'
       );
       if (alreadyRequested) {
-        alert('You have already submitted a request for this commute.');
+        showToast('You have already submitted a request for this commute.', 'info');
         return;
       }
 
@@ -480,7 +509,7 @@ export default function RiderDashboard() {
             .single();
 
           if (bookingErr || !newBooking) {
-            alert('Failed to initialize request: ' + (bookingErr?.message || 'Unknown error'));
+            showToast('Failed to initialize request: ' + (bookingErr?.message || 'Unknown error'), 'error');
             return;
           }
 
@@ -492,7 +521,7 @@ export default function RiderDashboard() {
         // Free pilot flow: confirm immediately
         const { data: confirmRes, error: confirmError } = await confirmMatch(user.id, posting.id);
         if (confirmError) {
-          alert('Failed to request ride match: ' + confirmError.message);
+          showToast('Failed to request ride match: ' + confirmError.message, 'error');
           return;
         }
 
@@ -507,11 +536,11 @@ export default function RiderDashboard() {
             .eq('id', user.id);
         }
 
-        alert("Trip request submitted! Your match is confirmed instantly.");
+        showToast('Trip request submitted! Your match is confirmed instantly.', 'success');
         fetchRiderData();
       }
     } catch (err: any) {
-      alert(err.message || 'Error occurred');
+      showToast(err.message || 'Error occurred', 'error');
     }
   };
 
@@ -571,6 +600,20 @@ export default function RiderDashboard() {
   return (
     <div className="flex flex-col min-h-screen bg-gazie-paper text-gazie-navy">
       <Navbar />
+
+      {/* Toast notifications */}
+      <Toast toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Confirm dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        danger={confirmDialog.danger}
+        confirmLabel="Yes, Cancel"
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirm}
+      />
 
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-6 space-y-6">
 

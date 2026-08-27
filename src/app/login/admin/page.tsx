@@ -66,26 +66,11 @@ function AdminLoginForm() {
 
   return (
     <div className="w-full space-y-6">
-      {/* Mock Autofill for development */}
+      {/* Mock mode banner — credentials must be entered manually */}
       {isMock && (
-        <div className="bg-gazie-navy text-gazie-paper p-4 rounded-xl border border-gazie-navy shadow-sm text-xs space-y-2 text-center">
+        <div className="bg-gazie-navy text-gazie-paper p-3 rounded-xl border border-gazie-navy shadow-sm text-xs text-center">
           <span className="font-bold text-gazie-yellow block">MOCK MODE ACTIVE</span>
-          <div className="flex flex-col sm:flex-row gap-2 justify-center">
-            <button 
-              type="button" 
-              onClick={() => { setEmail('09011111111@gazie.com'); setPassword('password123'); }}
-              className="flex-1 bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded font-mono text-[9px] uppercase font-bold cursor-pointer transition-all"
-            >
-              Seed Admin (09011111111@gazie.com)
-            </button>
-            <button 
-              type="button" 
-              onClick={() => { setEmail('gaziecommute@gmail.com'); setPassword('N3xtG3N@77%'); }}
-              className="flex-1 bg-white/10 hover:bg-white/20 px-2 py-1.5 rounded font-mono text-[9px] uppercase font-bold cursor-pointer transition-all"
-            >
-              Peculiar Admin (gaziecommute@gmail.com)
-            </button>
-          </div>
+          <span className="text-gazie-paper/60">Enter your admin credentials below to continue.</span>
         </div>
       )}
 

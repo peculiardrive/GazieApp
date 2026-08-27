@@ -81,7 +81,7 @@ export async function POST(req: Request) {
         await supabase.from('notifications').insert({
           user_id: booking.rider_id,
           title: 'Unlock Match Failed',
-          message: 'Your payment was successful, but the last seat on the ride from ' + booking.pickup + ' to ' + booking.destination + ' was taken. Please contact support at gaziecommute@gmail.com for a refund.',
+          message: `Your payment was successful, but the last seat on the ride from ${booking.pickup} to ${booking.destination} was taken. Please contact support at gaziecommute@gmail.com for a refund.`,
           read: false
         });
 
@@ -122,13 +122,13 @@ export async function POST(req: Request) {
         {
           user_id: booking.rider_id,
           title: 'Unlock Confirmed!',
-          message: 'Payment verified. Your ride match from ' + booking.pickup + ' to ' + booking.destination + ' has been confirmed! Driver details are now unlocked.',
+          message: `Payment verified. Your ride match from ${booking.pickup} to ${booking.destination} has been confirmed! Driver details are now unlocked.`,
           read: false
         },
         {
           user_id: posting.driver_id,
           title: 'Passenger Confirmed',
-          message: 'A passenger has completed payment and joined your posted commute from ' + booking.pickup + ' to ' + booking.destination + '.',
+          message: `A passenger has completed payment and joined your posted commute from ${booking.pickup} to ${booking.destination}.`,
           read: false
         }
       ]);
@@ -156,8 +156,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Internal Server Error';
     console.error('Paystack Webhook Error:', err);
-    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
