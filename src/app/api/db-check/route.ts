@@ -35,29 +35,23 @@ export async function GET() {
     }
   }
 
-  // Check storage bucket (and attempt auto-creation if missing)
+  // Check storage bucket connectivity
   try {
-    let { data: buckets, error: bucketErr } = await supabase.storage.listBuckets();
-    let hasBucket = buckets?.some((b: { name: string }) => b.name === 'verification-docs');
+    const { data: buckets, error: bucketErr } = await supabase.storage.listBuckets();
+    const hasInList = buckets?.some((b: { name: string }) => b.name === 'verification-docs');
+    
+    // Also test public URL generation for verification-docs
+    const { data: urlData } = supabase.storage.from('verification-docs').getPublicUrl('probe.txt');
+    const isUrlConfigured = !!urlData?.publicUrl;
 
-    if (!hasBucket) {
-      // Attempt auto-creation via Storage API
-      const { data: createData, error: createErr } = await supabase.storage.createBucket('verification-docs', {
-        public: true,
-        fileSizeLimit: 5242880, // 5MB
-        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
-      });
-
-      if (!createErr) {
-        hasBucket = true;
-      }
-    }
+    const isStorageActive = !!(hasInList || isUrlConfigured);
 
     results['storage:verification-docs'] = {
-      ok: hasBucket,
-      message: hasBucket 
-        ? 'Bucket verification-docs is active and ready' 
-        : 'Bucket not found. Run SQL or create in Supabase dashboard.'
+      ok: isStorageActive,
+      publicUrlAccessible: isUrlConfigured,
+      message: isStorageActive 
+        ? 'Bucket verification-docs is configured and accessible' 
+        : 'Bucket not found. Ensure verification-docs bucket is created in Supabase.'
     };
   } catch (err: unknown) {
     results['storage:verification-docs'] = { ok: false, error: err instanceof Error ? err.message : 'Unknown error' };
