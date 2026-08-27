@@ -41,7 +41,7 @@ export async function GET() {
     if (bucketErr) {
       results['storage:verification-docs'] = { ok: false, error: bucketErr.message };
     } else {
-      const hasBucket = buckets?.some(b => b.name === 'verification-docs');
+      const hasBucket = buckets?.some((b: { name: string }) => b.name === 'verification-docs');
       results['storage:verification-docs'] = { 
         ok: hasBucket, 
         message: hasBucket ? 'Bucket found' : 'Bucket verification-docs not found. Please create it or run schema.sql' 

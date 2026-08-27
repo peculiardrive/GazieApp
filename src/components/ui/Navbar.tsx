@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ShieldCheck, LogOut, User, ShieldAlert, Shield } from 'lucide-react';
