@@ -14,13 +14,16 @@ export async function POST(req: Request) {
 
     const rawBody = await req.text();
 
-    // Verify webhook signature authenticity
+    // Verify webhook signature authenticity using timingSafeEqual to prevent timing attacks
     const expectedSignature = crypto
       .createHmac('sha512', paystackSecret)
       .update(rawBody)
       .digest('hex');
 
-    if (expectedSignature !== signature) {
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf-8');
+    const signatureBuffer = Buffer.from(signature, 'utf-8');
+
+    if (expectedBuffer.length !== signatureBuffer.length || !crypto.timingSafeEqual(expectedBuffer, signatureBuffer)) {
       console.warn('Paystack Webhook: Signature verification failed.');
       return NextResponse.json({ error: 'Signature mismatch' }, { status: 401 });
     }

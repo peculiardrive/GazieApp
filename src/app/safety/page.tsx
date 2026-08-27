@@ -18,8 +18,14 @@ export default function SafetyPage() {
 
   const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description.trim()) {
+    const cleanDesc = description.trim();
+    if (!cleanDesc) {
       setError('Please provide a description of the incident.');
+      return;
+    }
+
+    if (cleanDesc.length > 2000) {
+      setError('Incident description must not exceed 2000 characters.');
       return;
     }
 

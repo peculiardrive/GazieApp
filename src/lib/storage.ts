@@ -1,10 +1,20 @@
 import { supabase, isMock } from './supabase';
 
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf'
+];
+
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
 /**
- * Uploads a document file (image/pdf) to Supabase Storage or reads it as a base64 URL if running in mock mode.
+ * Uploads a document file (image/pdf) to Supabase Storage with strict security validation.
  * @param file The HTML File object to upload
  * @param userId The UUID of the current user
- * @param docType The type of document (e.g. 'gov_id', 'driver_license', 'insurance')
+ * @param docType The type of document (e.g. 'gov_id', 'driver_license', 'incident')
  */
 export async function uploadDocument(
   file: File,
@@ -12,6 +22,21 @@ export async function uploadDocument(
   docType: string
 ): Promise<{ url: string | null; error: string | null }> {
   try {
+    // 1. File size validation
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return { url: null, error: 'File size exceeds maximum allowed limit of 5MB.' };
+    }
+
+    // 2. MIME type & extension validation
+    const fileExt = (file.name.split('.').pop() || '').toLowerCase().trim();
+    if (!ALLOWED_EXTENSIONS.includes(fileExt) || !ALLOWED_MIME_TYPES.includes(file.type)) {
+      return { url: null, error: 'Invalid file type. Only JPG, PNG, WEBP, and PDF files are permitted.' };
+    }
+
+    // 3. Sanitize docType and userId to prevent directory traversal
+    const safeDocType = docType.replace(/[^a-zA-Z0-9_-]/g, '');
+    const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, '');
+
     if (isMock) {
       // In mock mode, convert file to base64 so it can be stored in localStorage
       return new Promise((resolve) => {
@@ -32,17 +57,16 @@ export async function uploadDocument(
       });
     }
 
-    // In live mode, upload to Supabase Storage
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}/${docType}_${Date.now()}.${fileExt}`;
+    // 4. In live mode, upload to Supabase Storage
+    const fileName = `${safeUserId}/${safeDocType}_${Date.now()}.${fileExt}`;
     const filePath = `verifications/${fileName}`;
 
-    // Upload to 'verification-docs' bucket (User should create this bucket in Supabase dashboard)
     const { error: uploadError } = await supabase.storage
       .from('verification-docs')
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: true
+        upsert: true,
+        contentType: file.type
       });
 
     if (uploadError) {
@@ -55,7 +79,8 @@ export async function uploadDocument(
       .getPublicUrl(filePath);
 
     return { url: data.publicUrl, error: null };
-  } catch (err: any) {
-    return { url: null, error: err.message || 'An unknown error occurred during upload' };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'An unknown error occurred during upload';
+    return { url: null, error: errorMsg };
   }
 }
