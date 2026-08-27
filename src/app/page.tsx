@@ -212,7 +212,7 @@ export default function Home() {
                 Sign Up as Rider (Book Rides) <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                href="/login?role=driver"
+                href="/drivers"
                 className="w-full flex items-center justify-center gap-2 bg-white text-gazie-navy border-2 border-gazie-navy font-bold py-3 px-4 rounded-xl hover:bg-gazie-navy hover:text-gazie-paper transition-all duration-200 shadow-sm cursor-pointer text-center text-sm"
               >
                 Register as Driver (Offer Routes) <ArrowRight className="w-4 h-4" />
@@ -388,9 +388,13 @@ export default function Home() {
             <span className="hidden sm:inline text-gazie-navy/20">|</span>
             <span>Support Email: <a href="mailto:gaziecommute@gmail.com" className="underline font-bold hover:text-gazie-navy">gaziecommute@gmail.com</a></span>
           </div>
-          <div className="flex justify-center items-center gap-2 pt-2 border-t border-dashed border-gazie-navy/10 text-[10px]">
-            <Link href="/privacy" className="underline hover:text-gazie-navy text-gazie-navy/55 transition font-semibold">
-              Privacy Policy & Terms of Use
+          <div className="flex justify-center items-center gap-4 pt-2 border-t border-dashed border-gazie-navy/10 text-[10px]">
+            <Link href="/privacy" className="underline hover:text-gazie-navy text-gazie-navy/60 transition font-semibold">
+              Privacy Policy
+            </Link>
+            <span className="text-gazie-navy/30">&bull;</span>
+            <Link href="/terms" className="underline hover:text-gazie-navy text-gazie-navy/60 transition font-semibold">
+              Terms & Conditions
             </Link>
           </div>
         </div>
