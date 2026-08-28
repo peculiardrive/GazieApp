@@ -366,9 +366,10 @@ export default function ProfilePage() {
 
                 <span className="text-xs font-bold text-gazie-navy/60 uppercase block tracking-wider pt-2 border-t border-gray-100">Route & Pricing</span>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gazie-navy/60 uppercase">Route Details</label>
+                  <label className="text-[10px] font-bold text-gazie-navy/70 uppercase">Route Details</label>
                   <input
                     type="text"
+                    placeholder="e.g. Lugbe - Berger (or Secretariat / Wuse)"
                     value={usualRoute}
                     onChange={(e) => setUsualRoute(e.target.value)}
                     className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-lg text-xs font-semibold"
