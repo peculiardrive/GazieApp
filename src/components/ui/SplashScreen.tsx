@@ -52,7 +52,7 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
                 GAZIE <span className="text-[#FFC93C]">COMMUTE</span>
               </h1>
               <span className="font-mono text-[9px] tracking-widest text-[#14213D]/40 uppercase mt-1">
-                LUGBE PILOT v1
+                ABUJA & ENVIRONS
               </span>
             </div>
           </div>
@@ -82,7 +82,7 @@ export default function SplashScreen({ children }: { children: React.ReactNode }
 
         {/* Bottom Text Footer */}
         <div className="absolute bottom-8 font-mono text-[10px] text-[#14213D]/50 tracking-wider">
-          Lugbe &middot; Abuja
+          Abuja &middot; Nigeria
         </div>
       </div>
 

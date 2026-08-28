@@ -17,15 +17,15 @@ import {
 import Navbar from '@/components/ui/Navbar';
 
 export const metadata: Metadata = {
-  title: 'Driver Onboarding | Gazie Commute',
+  title: 'Driver Onboarding | Gazie Commute Abuja',
   description:
-    'Join Gazie Commute as a verified Lugbe driver. Share empty seats on your normal Abuja commute and offset fuel costs with verified riders.',
+    'Join Gazie Commute as a verified car owner. Share empty seats on your daily Abuja commute and offset fuel costs with verified neighbors.',
 };
 
 const steps = [
   {
     title: 'Register your profile',
-    body: 'Create a driver account with your phone number, normal route, vehicle details, and preferred departure time.',
+    body: 'Create a driver account with your phone number, normal commute route, vehicle details, and preferred departure time.',
     icon: ClipboardCheck,
   },
   {
@@ -63,7 +63,12 @@ const driverBenefits = [
   },
 ];
 
-const pilotRoutes = ['Lugbe to CBD', 'Lugbe to Garki', 'Lugbe to Wuse', 'Lugbe to Airport Road'];
+const pilotRoutes = [
+  'Airport Road / Lugbe to Secretariat & CBD',
+  'Kubwa & Gwarinpa to Wuse & Berger',
+  'Apo & Lokogoma to Area 11 & Secretariat',
+  'Nyanya & Mararaba to Central Area'
+];
 
 export default function DriversPage() {
   return (
@@ -75,7 +80,7 @@ export default function DriversPage() {
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border-2 border-gazie-navy bg-gazie-yellow px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider shadow-sm">
               <MapPinned className="h-3.5 w-3.5" />
-              Lugbe driver pilot
+              Abuja Driver Network
             </div>
 
             <div className="space-y-4">
@@ -83,8 +88,8 @@ export default function DriversPage() {
                 Turn your daily commute into shared fuel relief.
               </h1>
               <p className="max-w-xl text-sm font-semibold leading-7 text-gazie-navy/72 sm:text-base">
-                Already driving from Lugbe to town? Gazie Commute helps verified Abuja commuters share
-                your empty seats while you keep control of your route, timing, seats, and fare.
+                Driving across Abuja for work or business? Gazie Commute helps verified car owners share
+                empty seats with trusted neighbors while keeping full control of your route, schedule, and fare.
               </p>
             </div>
 
@@ -201,10 +206,10 @@ export default function DriversPage() {
 
         <section className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="space-y-4">
-            <h2 className="font-display text-2xl font-extrabold tracking-tight">Pilot routes</h2>
+            <h2 className="font-display text-2xl font-extrabold tracking-tight">Active Commute Corridors</h2>
             <p className="text-sm font-semibold leading-7 text-gazie-navy/70">
-              The first onboarding push is for predictable weekday routes from Lugbe into Abuja business
-              districts. Drivers can post one-off trips or recurring weekday commutes.
+              Connecting residential corridors (Airport Road, Kubwa, Gwarinpa, Apo, Lokogoma, Nyanya) into Abuja business
+              districts and ministries. Drivers can post one-off trips or recurring weekday commutes.
             </p>
             <div className="flex flex-wrap gap-2">
               {pilotRoutes.map((route) => (

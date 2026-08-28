@@ -20,8 +20,8 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gazie Commute — Verified Ride-Sharing in Lugbe, Abuja",
-  description: "Lugbe's premier verified commute-sharing platform. Book your ride today and enjoy safe, affordable, next-day commuting.",
+  title: "Gazie Commute — Verified Daily Ride-Sharing & Commutes in Abuja",
+  description: "Abuja's trusted verified commute-sharing platform. Connect with verified drivers and riders across major corridors (Airport Road, Kubwa, Gwarinpa, Apo, Lokogoma, Nyanya, CBD, Wuse, Secretariat).",
 };
 
 export const viewport: Viewport = {

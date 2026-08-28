@@ -617,7 +617,7 @@ export default function LoginPage() {
             <span className="font-display font-extrabold text-base leading-none tracking-tight text-gazie-navy">
               GAZIE <span className="text-gazie-yellow">COMMUTE</span>
             </span>
-            <span className="font-mono text-[9px] tracking-wider text-gazie-navy/60 font-bold mt-1">LUGBE PILOT v1</span>
+            <span className="font-mono text-[9px] tracking-wider text-gazie-navy/60 font-bold mt-1">ABUJA & ENVIRONS</span>
           </div>
         </Link>
       </header>

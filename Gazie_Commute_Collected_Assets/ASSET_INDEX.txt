@@ -1,0 +1,22 @@
+Gazie Commute collected assets
+
+Folders:
+01_flyers_posts_graphics - usable flyers, Instagram posts, public notice, social cards, and product graphics
+02_logos_brand - logos, icons, splash screens, marks, favicon, and brand assets
+03_documents - proposals, certificates, pitch docs, setup notes, PDFs and DOCX files
+04_captions - Instagram captions generated for driver onboarding posts
+
+Key marketing files:
+048_gazie-driver-lugbe-routes-square.png
+046_gazie-driver-launch-square.png
+044_gazie-driver-how-it-works-square.png
+042_gazie-driver-benefits-square.png
+050_gazie-driver-trust-square.png
+072_Newsite_Commute_flyer.png
+065_Public_Notice.png
+021_gazie-commute-full.png
+022_gazie-commute-icon.png
+023_gazie-commute-white.png
+064_logo_nobg.jpeg
+
+See inventory.csv for the original source path of every copied file.

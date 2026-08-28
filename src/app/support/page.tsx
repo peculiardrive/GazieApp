@@ -11,7 +11,7 @@ export default function SupportPage() {
   const faqs = [
     {
       q: "How does Gazie Commute work?",
-      a: "Gazie Commute connects verified car owners (Drivers) and passengers (Riders) traveling along the same route in Abuja (such as Lugbe to Secretariat/Wuse). Drivers post their scheduled departure times and empty seats to offset fuel costs, and riders request seats for a trusted, comfortable daily commute."
+      a: "Gazie Commute connects verified car owners (Drivers) and passengers (Riders) traveling along the same route across Abuja and its residential corridors (such as Airport Road, Kubwa, Gwarinpa, Apo, Lokogoma, Nyanya into Secretariat, CBD, and Wuse). Drivers post their scheduled departure times and empty seats to offset fuel costs, and riders request seats for a trusted, comfortable daily commute."
     },
     {
       q: "How do I pay the driver for fuel sharing?",

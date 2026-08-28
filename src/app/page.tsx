@@ -154,7 +154,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 max-w-lg mx-auto w-full">
         {/* Danfo Yellow Badge */}
         <div className="bg-gazie-yellow border-2 border-gazie-navy text-gazie-navy font-bold font-mono text-xs px-3 py-1.5 rounded-full mb-6 uppercase tracking-wider animate-bounce shadow-md">
-          {process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true' ? 'Lugbe, Abuja Pilot' : 'Lugbe, Abuja Pilot — 100% Free'}
+          {process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true' ? 'Abuja & Environs Network' : 'Abuja Commuter Network — 100% Free'}
         </div>
 
         {/* Hero Section */}
@@ -333,9 +333,9 @@ export default function Home() {
               <Car className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-display font-bold text-sm text-gazie-navy">Lugbe Local Routes</h3>
+              <h3 className="font-display font-bold text-sm text-gazie-navy">All Major Abuja Corridors</h3>
               <p className="text-xs text-gazie-navy/70 mt-0.5">
-                Tailored for Abuja commuters travelling to Central Business District, Garki, Wuse, and Airport Road daily.
+                Connecting Airport Road, Kubwa, Gwarinpa, Apo, Lokogoma, Nyanya, CBD, Federal Secretariat, Wuse, and beyond.
               </p>
             </div>
           </div>
