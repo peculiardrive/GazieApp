@@ -378,9 +378,10 @@ export default function ProfilePage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gazie-navy/60 uppercase">Availability Window</label>
+                    <label className="text-[10px] font-bold text-gazie-navy/70 uppercase">Daily Departure Time Range</label>
                     <input
                       type="text"
+                      placeholder="e.g. 06:30 AM - 08:00 AM"
                       value={availableTimeWindow}
                       onChange={(e) => setAvailableTimeWindow(e.target.value)}
                       className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-lg text-xs font-semibold"
