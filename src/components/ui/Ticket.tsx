@@ -172,11 +172,21 @@ export default function Ticket({
                     </div>
                   )}
                   {driverPhone && (
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <span className="font-semibold text-gazie-navy">Contact (Call/SMS):</span>
-                      <a href={`tel:${driverPhone}`} className="font-mono font-bold text-gazie-navy underline flex items-center gap-1">
-                        <Phone className="w-3 h-3 inline" /> {driverPhone}
-                      </a>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs pt-1">
+                      <span className="font-semibold text-gazie-navy">Driver Contact:</span>
+                      <div className="flex items-center gap-2">
+                        <a href={`tel:${driverPhone}`} className="font-mono font-bold text-gazie-navy underline flex items-center gap-1">
+                          <Phone className="w-3 h-3 inline" /> {driverPhone}
+                        </a>
+                        <a 
+                          href={`https://wa.me/${driverPhone.replace(/^0/, '234').replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(driverName || 'Driver')}%2C%20I%20am%20your%20matched%20passenger%20on%20Gazie%20Commute`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-0.5 rounded-lg bg-[#2D6A4F] text-white font-bold text-[10px] flex items-center gap-1 hover:opacity-90 transition"
+                        >
+                          💬 WhatsApp
+                        </a>
+                      </div>
                     </div>
                   )}
                 </>
@@ -189,11 +199,21 @@ export default function Ticket({
                     <span className="font-bold">{riderName}</span>
                   </div>
                   {riderPhone && (
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <span className="font-semibold text-gazie-navy">Contact:</span>
-                      <a href={`tel:${riderPhone}`} className="font-mono font-bold text-gazie-navy underline flex items-center gap-1">
-                        <Phone className="w-3 h-3 inline" /> {riderPhone}
-                      </a>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs pt-1">
+                      <span className="font-semibold text-gazie-navy">Rider Contact:</span>
+                      <div className="flex items-center gap-2">
+                        <a href={`tel:${riderPhone}`} className="font-mono font-bold text-gazie-navy underline flex items-center gap-1">
+                          <Phone className="w-3 h-3 inline" /> {riderPhone}
+                        </a>
+                        <a 
+                          href={`https://wa.me/${riderPhone.replace(/^0/, '234').replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(riderName || 'Rider')}%2C%20I%20am%20your%20matched%20driver%20on%20Gazie%20Commute`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-0.5 rounded-lg bg-[#2D6A4F] text-white font-bold text-[10px] flex items-center gap-1 hover:opacity-90 transition"
+                        >
+                          💬 WhatsApp
+                        </a>
+                      </div>
                     </div>
                   )}
                 </>
