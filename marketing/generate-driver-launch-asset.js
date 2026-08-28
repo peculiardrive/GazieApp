@@ -57,6 +57,18 @@ const posts = [
     caption:
       "Gazie Commute is built for planned, community-minded trips.\n\nDrivers upload their licence, insurance, and vehicle details. Riders also complete verification, so each match starts with clearer trust and accountability.\n\nDriver onboarding:\nhttps://gazie-commute.vercel.app/drivers\n\n#GazieCommute #VerifiedDrivers #AbujaCommute #Lugbe #SaferCommutes",
   },
+  {
+    slug: "gazie-driver-lugbe-routes-square",
+    tag: "LUGBE ROUTES",
+    title: ["Lugbe drivers", "needed this", "week."],
+    accent: "week.",
+    badge: "5",
+    bodyTop: "Drive your usual route and share available seats.",
+    bodyBottom: "Start with one planned commute. Gazie helps organize it.",
+    captionTitle: "Gazie Commute Lugbe Routes Caption",
+    caption:
+      "Lugbe drivers, Gazie Commute is onboarding now.\n\nIf you already drive toward town, your empty seats can help other verified commuters while helping you offset fuel costs.\n\nStart with one planned route and schedule.\n\nDriver onboarding:\nhttps://gazie-commute.vercel.app/drivers\n\n#GazieCommute #LugbeDrivers #AbujaDrivers #SharedCommute #DriversWanted",
+  },
 ];
 
 function escapeXml(value) {

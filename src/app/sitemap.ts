@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gazie-commute.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gaziecommute.com';
   const currentDate = new Date();
 
   return [
