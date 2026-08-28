@@ -7,8 +7,9 @@ import Navbar from '@/components/ui/Navbar';
 import Ticket from '@/components/ui/Ticket';
 import Toast, { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { MapPin, Clock, Calendar, AlertTriangle, ShieldAlert, BadgeCheck, Car, Landmark, Trash2, Power, Plus, ArrowRight, FileText } from 'lucide-react';
+import { MapPin, Clock, Calendar, AlertTriangle, ShieldAlert, BadgeCheck, Car, Landmark, Trash2, Power, Plus, ArrowRight, FileText, Sparkles } from 'lucide-react';
 import VerificationModal from '@/components/ui/VerificationModal';
+import { STANDARD_ABUJA_DESTINATIONS, STANDARD_COMMUTE_ROUTES, getKnownDestinations } from '@/lib/routes';
 
 export default function DriverDashboard() {
   const router = useRouter();
@@ -696,24 +697,45 @@ export default function DriverDashboard() {
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Destination</label>
-                  <div className="relative flex items-center">
-                    <MapPin className="absolute left-3 w-4 h-4 text-gazie-navy/40 pointer-events-none" />
-                    <select
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Destination (Drop-off)</label>
+                    <span className="text-[9px] text-gazie-navy/50 font-semibold">Select or type custom hub</span>
+                  </div>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gazie-navy/40" />
+                    <input
+                      type="text"
+                      list="driver-destinations-list"
+                      placeholder="e.g. Berger, Secretariat, Wuse II, Area 10..."
                       value={postDestination}
                       onChange={(e) => setPostDestination(e.target.value)}
-                      className="w-full pl-9 pr-8 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold appearance-none cursor-pointer"
+                      className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold"
                       required
-                    >
-                      <option value="Secretariat, Garki">Secretariat, Garki</option>
-                      <option value="CBD">CBD</option>
-                      <option value="Wuse">Wuse</option>
-                      <option value="Airport Road">Airport Road</option>
-                    </select>
-                    <div className="absolute right-3 pointer-events-none border-l border-gazie-navy/20 pl-2">
-                      <ArrowRight className="w-3.5 h-3.5 text-gazie-navy/50 rotate-90" />
-                    </div>
+                    />
+                    <datalist id="driver-destinations-list">
+                      {STANDARD_ABUJA_DESTINATIONS.map((dest) => (
+                        <option key={dest} value={dest} />
+                      ))}
+                    </datalist>
+                  </div>
+
+                  {/* Quick Select Destination Pills */}
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {['Berger', 'Federal Secretariat', 'Wuse II', 'Area 1', 'Area 10', 'Area 11', 'Banex Plaza', 'Gudu', 'Airport Road', 'Dunamis'].map((hub) => (
+                      <button
+                        type="button"
+                        key={hub}
+                        onClick={() => setPostDestination(hub)}
+                        className={`text-[9px] px-2 py-0.5 rounded-full border transition cursor-pointer ${
+                          postDestination === hub
+                            ? 'bg-gazie-navy text-white border-gazie-navy font-bold'
+                            : 'bg-white text-gazie-navy/70 border-gazie-navy/20 hover:border-gazie-navy hover:text-gazie-navy'
+                        }`}
+                      >
+                        {hub}
+                      </button>
+                    ))}
                   </div>
                 </div>
 

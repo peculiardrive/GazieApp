@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { uploadDocument } from '@/lib/storage';
 import Navbar from '@/components/ui/Navbar';
-import { ShieldCheck, Phone, User, Landmark, Car, HeartHandshake, BadgeAlert, ArrowLeft, Mail, FileText, Upload, ShieldAlert, Award } from 'lucide-react';
+import { ShieldCheck, Phone, User, Landmark, Car, HeartHandshake, BadgeAlert, ArrowLeft, Mail, FileText, Upload, ShieldAlert, Award, MapPin } from 'lucide-react';
+import { STANDARD_COMMUTE_ROUTES } from '@/lib/routes';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -364,18 +365,44 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <span className="text-xs font-bold text-gazie-navy/60 uppercase block tracking-wider pt-2 border-t border-gray-100">Route & Pricing</span>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gazie-navy/70 uppercase">Route Details</label>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-bold text-gazie-navy/70 uppercase">Route Details</label>
+                    <span className="text-[9px] text-gazie-navy/50 font-semibold">Select or type custom route</span>
+                  </div>
                   <input
                     type="text"
-                    placeholder="e.g. Lugbe - Berger (or Secretariat / Wuse)"
+                    list="profile-known-routes"
+                    placeholder="e.g. Lugbe -> Berger (or Secretariat, Wuse II)"
                     value={usualRoute}
                     onChange={(e) => setUsualRoute(e.target.value)}
-                    className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-lg text-xs font-semibold"
+                    className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-lg text-xs font-semibold focus:outline-none focus:border-gazie-yellow"
                     disabled={profile?.verification_status === 'pending_review'}
                     required
                   />
+                  <datalist id="profile-known-routes">
+                    {STANDARD_COMMUTE_ROUTES.map((r) => (
+                      <option key={r} value={r} />
+                    ))}
+                  </datalist>
+
+                  {/* Popular Route Quick Select Pills */}
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {['Lugbe -> Berger', 'Lugbe -> Federal Secretariat', 'Lugbe -> Wuse II', 'Lugbe -> Area 10', 'Lugbe -> Banex Plaza', 'Lugbe -> Gudu', 'Lugbe -> Airport / Dunamis'].map((preset) => (
+                      <button
+                        type="button"
+                        key={preset}
+                        onClick={() => setUsualRoute(preset)}
+                        className={`text-[9px] px-2 py-0.5 rounded-full border transition cursor-pointer ${
+                          usualRoute === preset
+                            ? 'bg-gazie-navy text-white border-gazie-navy font-bold'
+                            : 'bg-white text-gazie-navy/70 border-gazie-navy/20 hover:border-gazie-navy hover:text-gazie-navy'
+                        }`}
+                      >
+                        {preset.replace('Lugbe -> ', '')}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">

@@ -13,6 +13,7 @@ import {
   UserPlus, Trash2, Download, Search, RefreshCw, AlertTriangle, 
   CheckCircle2, Phone, Shield, Eye
 } from 'lucide-react';
+import { STANDARD_COMMUTE_ROUTES } from '@/lib/routes';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -1265,11 +1266,17 @@ export default function AdminDashboard() {
                               <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Usual Route</label>
                               <input
                                 type="text"
-                                placeholder="Lugbe Plaza -> Secretariat"
+                                list="admin-add-user-routes"
+                                placeholder="e.g. Lugbe -> Berger (or Secretariat)"
                                 value={newUserForm.usual_route}
                                 onChange={e => setNewUserForm({ ...newUserForm, usual_route: e.target.value })}
                                 className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs"
                               />
+                              <datalist id="admin-add-user-routes">
+                                {STANDARD_COMMUTE_ROUTES.map(r => (
+                                  <option key={r} value={r} />
+                                ))}
+                              </datalist>
                             </div>
                             <div className="space-y-1">
                               <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Seat Fare (₦)</label>
@@ -1443,10 +1450,17 @@ export default function AdminDashboard() {
                               <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Usual Route</label>
                               <input
                                 type="text"
+                                list="admin-edit-user-routes"
+                                placeholder="e.g. Lugbe -> Berger (or Secretariat)"
                                 value={editUsualRoute}
                                 onChange={e => setEditUsualRoute(e.target.value)}
                                 className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs"
                               />
+                              <datalist id="admin-edit-user-routes">
+                                {STANDARD_COMMUTE_ROUTES.map(r => (
+                                  <option key={r} value={r} />
+                                ))}
+                              </datalist>
                             </div>
                             <div className="space-y-1">
                               <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Seat Fare (₦)</label>
@@ -1537,19 +1551,17 @@ export default function AdminDashboard() {
 
               {/* 6. DELETE CONFIRMATION MODAL */}
               <ConfirmDialog
-                isOpen={!!deleteConfirmUser}
+                open={!!deleteConfirmUser}
                 title="Delete User Account"
                 message={`Are you sure you want to permanently delete "${deleteConfirmUser?.full_name || 'this user'}"? All their associated bookings, trip postings, and verification documents will be removed permanently.`}
                 confirmLabel={deleteSaving ? "Deleting..." : "Permanently Delete"}
                 cancelLabel="Cancel"
-                isDangerous={true}
+                danger={true}
                 onConfirm={executeDeleteUser}
                 onCancel={() => setDeleteConfirmUser(null)}
               />
-
             </div>
           );
-        })()}
         })()}
 
         {/* ACTIVE TAB: ANALYTICS (New Analytics Section) */}

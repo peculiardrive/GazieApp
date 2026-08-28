@@ -10,6 +10,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { MapPin, Clock, Calendar, AlertTriangle, ShieldAlert, Phone, Bell, CheckSquare, Search, Sparkles, UserCheck, ArrowRight, FileText } from 'lucide-react';
 import Script from 'next/script';
 import VerificationModal from '@/components/ui/VerificationModal';
+import { STANDARD_ABUJA_DESTINATIONS } from '@/lib/routes';
 
 export default function RiderDashboard() {
   const router = useRouter();
@@ -733,8 +734,11 @@ export default function RiderDashboard() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Route Destination</label>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Route Destination</label>
+                    <span className="text-[9px] text-gazie-navy/50 font-semibold">Filter by town destination</span>
+                  </div>
                   <div className="relative flex items-center">
                     <MapPin className="absolute left-3 w-4 h-4 text-gazie-navy/40 pointer-events-none" />
                     <select
@@ -742,15 +746,32 @@ export default function RiderDashboard() {
                       onChange={(e) => setSearchDest(e.target.value)}
                       className="w-full pl-9 pr-8 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold cursor-pointer appearance-none"
                     >
-                      <option value="all">All Destinations</option>
-                      <option value="Secretariat, Garki">Secretariat, Garki</option>
-                      <option value="CBD">CBD</option>
-                      <option value="Wuse">Wuse</option>
-                      <option value="Airport Road">Airport Road</option>
+                      <option value="all">🌟 All Destinations (Abuja & Environs)</option>
+                      {STANDARD_ABUJA_DESTINATIONS.map((dest) => (
+                        <option key={dest} value={dest}>{dest}</option>
+                      ))}
                     </select>
                     <div className="absolute right-3 pointer-events-none border-l border-gazie-navy/20 pl-2">
                       <ArrowRight className="w-3.5 h-3.5 text-gazie-navy/50 rotate-90" />
                     </div>
+                  </div>
+
+                  {/* Quick Filter Chips */}
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {['all', 'Berger', 'Federal Secretariat', 'Wuse II', 'Area 10', 'Banex Plaza', 'Gudu', 'Dunamis'].map((chip) => (
+                      <button
+                        type="button"
+                        key={chip}
+                        onClick={() => setSearchDest(chip)}
+                        className={`text-[9px] px-2.5 py-0.5 rounded-full border transition cursor-pointer ${
+                          searchDest === chip
+                            ? 'bg-gazie-navy text-white border-gazie-navy font-bold shadow-sm'
+                            : 'bg-white text-gazie-navy/70 border-gazie-navy/20 hover:border-gazie-navy hover:text-gazie-navy'
+                        }`}
+                      >
+                        {chip === 'all' ? 'All' : chip}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -834,18 +855,45 @@ export default function RiderDashboard() {
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Destination</label>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Destination (Drop-off)</label>
+                      <span className="text-[9px] text-gazie-navy/50 font-semibold">Select or type custom hub</span>
+                    </div>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gazie-navy/40" />
                       <input
                         type="text"
-                        placeholder="e.g. Secretariat, Garki"
+                        list="rider-destinations-datalist"
+                        placeholder="e.g. Berger, Secretariat, Wuse II, Area 10, Banex..."
                         value={destination}
                         onChange={(e) => setDestination(e.target.value)}
                         className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold"
                         required
                       />
+                      <datalist id="rider-destinations-datalist">
+                        {STANDARD_ABUJA_DESTINATIONS.map((dest) => (
+                          <option key={dest} value={dest} />
+                        ))}
+                      </datalist>
+                    </div>
+
+                    {/* Quick Select Destination Chips */}
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {['Berger', 'Federal Secretariat', 'Wuse II', 'Area 10', 'Banex Plaza', 'Gudu', 'Dunamis', 'Airport Road'].map((hub) => (
+                        <button
+                          type="button"
+                          key={hub}
+                          onClick={() => setDestination(hub)}
+                          className={`text-[9px] px-2 py-0.5 rounded-full border transition cursor-pointer ${
+                            destination === hub
+                              ? 'bg-gazie-navy text-white border-gazie-navy font-bold'
+                              : 'bg-white text-gazie-navy/70 border-gazie-navy/20 hover:border-gazie-navy hover:text-gazie-navy'
+                          }`}
+                        >
+                          {hub}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
