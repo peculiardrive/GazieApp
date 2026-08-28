@@ -34,8 +34,14 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Helper function to check if the current user is an admin without RLS recursion
-CREATE OR REPLACE FUNCTION public.is_admin()
+-- Drop any previously overloaded versions of is_admin to eliminate ambiguity
+DROP FUNCTION IF EXISTS public.is_admin() CASCADE;
+DROP FUNCTION IF EXISTS public.is_admin(uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.is_admin(text) CASCADE;
+DROP FUNCTION IF EXISTS public.current_user_is_admin() CASCADE;
+
+-- Unambiguous helper function to check if the current user is an admin without RLS recursion
+CREATE OR REPLACE FUNCTION public.current_user_is_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
@@ -58,7 +64,7 @@ CREATE POLICY "Users and admins can insert profiles"
   WITH CHECK (
     auth.uid() = id OR
     auth.uid() IS NULL OR
-    public.is_admin()
+    public.current_user_is_admin()
   );
 
 DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
@@ -67,18 +73,18 @@ CREATE POLICY "Users can update their own profile"
   ON public.profiles FOR UPDATE 
   USING (
     auth.uid() = id OR 
-    public.is_admin()
+    public.current_user_is_admin()
   )
   WITH CHECK (
     auth.uid() = id OR 
-    public.is_admin()
+    public.current_user_is_admin()
   );
 
 DROP POLICY IF EXISTS "Admins can delete any profile" ON public.profiles;
 CREATE POLICY "Admins can delete any profile" 
   ON public.profiles FOR DELETE 
   USING (
-    public.is_admin()
+    public.current_user_is_admin()
   );
 
 -- Trigger to automatically create a profile after signup
