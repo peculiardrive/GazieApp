@@ -88,3 +88,14 @@ export interface IncidentReport {
   photo_url?: string | null;
   created_at: string;
 }
+
+export interface Rating {
+  id: string;
+  booking_id?: string;
+  reviewer_id: string;
+  reviewee_id: string;
+  score: number;
+  feedback?: string | null;
+  created_at: string;
+}
+

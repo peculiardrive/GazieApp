@@ -494,3 +494,35 @@ TO authenticated
 USING (bucket_id = 'verification-docs');
 
 
+-- =========================================================================
+-- 10. RATINGS & REVIEWS SYSTEM
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.ratings (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  booking_id UUID REFERENCES public.bookings(id) ON DELETE CASCADE,
+  reviewer_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  reviewee_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  score INTEGER CHECK (score >= 1 AND score <= 5) NOT NULL,
+  feedback TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  CONSTRAINT unique_trip_rating UNIQUE (booking_id, reviewer_id)
+);
+
+ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Ratings viewable by authenticated users"
+  ON public.ratings FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Users can create rating for completed trip"
+  ON public.ratings FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = reviewer_id);
+
+CREATE INDEX IF NOT EXISTS idx_ratings_reviewee_id ON public.ratings(reviewee_id);
+CREATE INDEX IF NOT EXISTS idx_ratings_reviewer_id ON public.ratings(reviewer_id);
+CREATE INDEX IF NOT EXISTS idx_ratings_booking_id ON public.ratings(booking_id);
+
+
+

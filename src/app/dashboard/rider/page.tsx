@@ -10,6 +10,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { MapPin, Clock, Calendar, AlertTriangle, ShieldAlert, Phone, Bell, CheckSquare, Search, Sparkles, UserCheck, ArrowRight, FileText } from 'lucide-react';
 import Script from 'next/script';
 import VerificationModal from '@/components/ui/VerificationModal';
+import RatingModal from '@/components/ui/RatingModal';
 import { STANDARD_ABUJA_DESTINATIONS } from '@/lib/routes';
 
 export default function RiderDashboard() {
@@ -18,6 +19,7 @@ export default function RiderDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [ratingModalBooking, setRatingModalBooking] = useState<any | null>(null);
 
   // Toast notifications
   const { toasts, showToast, dismissToast } = useToast();
@@ -262,12 +264,22 @@ export default function RiderDashboard() {
 
       setAllDrivers((allProfiles || []).filter((p: any) => p.role === 'driver'));
 
+      // 3. Fetch ratings submitted by user
+      const { data: userRatings } = await supabase
+        .from('ratings')
+        .select('booking_id, score')
+        .eq('reviewer_id', user.id);
+
       const mappedBookings = (bookingsData || []).map((booking: any) => {
         const driver = (allProfiles || []).find((p: any) => p.id === booking.driver_id);
+        const isRated = !!(userRatings || []).some((r: any) => r.booking_id === booking.id);
         return {
           ...booking,
+          driver,
           driverName: driver?.full_name || 'Awaiting Admin Match',
           driverPhone: driver?.phone || '',
+          partnerRating: driver?.rating || 5.0,
+          isRated: isRated,
           vehicleInfo: driver ? `${driver.vehicle_make} ${driver.vehicle_model} [${driver.vehicle_plate}]` : '',
         };
       });
@@ -817,6 +829,7 @@ export default function RiderDashboard() {
                         fare={posting.fare_per_seat}
                         role="rider"
                         driverName={driver?.full_name || 'Verified Driver'}
+                        partnerRating={driver?.rating || 5.0}
                         driverPhone={`🚘 ${driver?.vehicle_make || ''} ${driver?.vehicle_model || ''}`}
                         vehicleInfo={`${posting.seats_available} of ${posting.seats_total} seats left`}
                         onSelect={() => handleRequestRidePosting(posting)}
@@ -945,7 +958,7 @@ export default function RiderDashboard() {
             <section className="space-y-3">
               <h2 className="font-display font-extrabold text-lg tracking-tight">My Transit Passes</h2>
               {bookings.length === 0 ? (
-                <div className="bg-white border border-dashed border-gazie-navy/20 rounded-2xl p-8 text-center">
+                    <div className="bg-white border border-dashed border-gazie-navy/20 rounded-2xl p-8 text-center">
                   <p className="text-xs text-gazie-navy/60 font-semibold">You have no scheduled ride passes yet.</p>
                   <p className="text-[10px] text-gazie-navy/40 mt-1">Book your first ride using the form above.</p>
                 </div>
@@ -964,6 +977,13 @@ export default function RiderDashboard() {
                       role="rider"
                       driverName={booking.driverName}
                       driverPhone={isVerified ? booking.driverPhone : 'Unverified (Contact Hidden)'}
+                      partnerRating={booking.partnerRating}
+                      isRated={booking.isRated}
+                      onRate={
+                        (booking.status === 'completed' || booking.status === 'matched' || booking.status === 'confirmed')
+                          ? () => setRatingModalBooking(booking)
+                          : undefined
+                      }
                       vehicleInfo={booking.vehicleInfo}
                       onCancel={
                         (booking.status === 'pending' || booking.status === 'matched' || booking.status === 'requested' || booking.status === 'payment_failed')
@@ -996,27 +1016,28 @@ export default function RiderDashboard() {
               </div>
               <form onSubmit={handleUpdateEmergency} className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/60 block">
-                    Relative or Friend's Phone Number
+                  <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                    Trusted Contact Phone
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gazie-navy/40" />
                     <input
                       type="tel"
-                      placeholder="e.g. 08033332222"
+                      placeholder="e.g. 08012345678"
                       value={emergencyContact}
                       onChange={(e) => setEmergencyContact(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-mono focus:outline-none focus:border-gazie-yellow"
+                      className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-mono focus:outline-none focus:border-gazie-yellow font-semibold"
                       required
                     />
                   </div>
                 </div>
+
                 <button
                   type="submit"
                   disabled={emergencyUpdateLoading}
-                  className="w-full bg-white text-gazie-navy font-bold py-2 rounded-xl border border-gazie-navy hover:bg-gazie-navy hover:text-gazie-paper transition-all duration-200 text-xs cursor-pointer disabled:opacity-50"
+                  className="w-full bg-gazie-navy text-gazie-paper font-bold py-2 rounded-xl border border-gazie-navy hover:bg-gazie-yellow hover:text-gazie-navy transition-all duration-200 text-xs shadow-sm cursor-pointer disabled:opacity-50"
                 >
-                  {emergencyUpdateLoading ? 'Saving...' : 'Update Emergency Number'}
+                  {emergencyUpdateLoading ? 'Updating Contact...' : 'Save Emergency Contact'}
                 </button>
               </form>
             </section>
@@ -1024,7 +1045,7 @@ export default function RiderDashboard() {
         )}
 
         {/* 4. Safety Report Shortcut */}
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex justify-between items-center text-xs">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center justify-between gap-4 text-left">
           <div>
             <span className="font-bold text-red-800 block">Felt Unsafe or Encountered an Issue?</span>
             <span className="text-[10px] text-red-700 block mt-0.5">Submit an incident report immediately to the Gazie admins.</span>
@@ -1061,6 +1082,18 @@ export default function RiderDashboard() {
         profile={profile}
         onSuccess={(updatedProfile) => {
           setProfile(updatedProfile);
+        }}
+      />
+      
+      {/* Rating & Review Modal */}
+      <RatingModal
+        isOpen={!!ratingModalBooking}
+        onClose={() => setRatingModalBooking(null)}
+        booking={ratingModalBooking}
+        currentUserId={profile?.id}
+        onSuccess={() => {
+          showToast('Rating submitted successfully! Thank you.', 'success');
+          fetchRiderData();
         }}
       />
     </div>

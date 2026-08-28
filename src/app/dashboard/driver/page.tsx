@@ -9,6 +9,7 @@ import Toast, { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { MapPin, Clock, Calendar, AlertTriangle, ShieldAlert, BadgeCheck, Car, Landmark, Trash2, Power, Plus, ArrowRight, FileText, Sparkles } from 'lucide-react';
 import VerificationModal from '@/components/ui/VerificationModal';
+import RatingModal from '@/components/ui/RatingModal';
 import { STANDARD_ABUJA_DESTINATIONS, STANDARD_COMMUTE_ROUTES, getKnownDestinations } from '@/lib/routes';
 
 export default function DriverDashboard() {
@@ -17,6 +18,7 @@ export default function DriverDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [ratingModalBooking, setRatingModalBooking] = useState<any | null>(null);
 
   // Toast notifications
   const { toasts, showToast, dismissToast } = useToast();
@@ -114,12 +116,22 @@ export default function DriverDashboard() {
         .from('profiles')
         .select('id, full_name, phone');
 
+      // Fetch ratings submitted by driver
+      const { data: userRatings } = await supabase
+        .from('ratings')
+        .select('booking_id, score')
+        .eq('reviewer_id', user.id);
+
       const mappedBookings = (bookingsData || []).map((booking: any) => {
         const rider = (allProfiles || []).find((p: any) => p.id === booking.rider_id);
+        const isRated = !!(userRatings || []).some((r: any) => r.booking_id === booking.id);
         return {
           ...booking,
+          rider,
           riderName: rider?.full_name || 'Passenger',
           riderPhone: rider?.phone || '',
+          partnerRating: rider?.rating || 5.0,
+          isRated: isRated
         };
       });
 
@@ -652,6 +664,13 @@ export default function DriverDashboard() {
                       role="driver"
                       riderName={booking.riderName}
                       riderPhone={isVerified ? booking.riderPhone : 'Unverified (Contact Hidden)'}
+                      partnerRating={booking.partnerRating}
+                      isRated={booking.isRated}
+                      onRate={
+                        (booking.status === 'completed' || booking.status === 'confirmed' || booking.status === 'matched')
+                          ? () => setRatingModalBooking(booking)
+                          : undefined
+                      }
                       onCancel={
                         (booking.status === 'confirmed' || booking.status === 'matched')
                           ? () => handleCancelBooking(booking.id)
@@ -914,6 +933,18 @@ export default function DriverDashboard() {
         profile={profile}
         onSuccess={(updatedProfile) => {
           setProfile(updatedProfile);
+        }}
+      />
+
+      {/* Rating & Review Modal */}
+      <RatingModal
+        isOpen={!!ratingModalBooking}
+        onClose={() => setRatingModalBooking(null)}
+        booking={ratingModalBooking}
+        currentUserId={profile?.id}
+        onSuccess={() => {
+          showToast('Rating submitted successfully! Thank you.', 'success');
+          fetchDriverData();
         }}
       />
     </div>

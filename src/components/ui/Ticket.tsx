@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Calendar, Clock, CheckCircle, Clock3, AlertCircle, Phone, CreditCard, ShieldAlert, ChevronDown } from 'lucide-react';
+import { MapPin, Calendar, Clock, CheckCircle, Clock3, AlertCircle, Phone, CreditCard, ShieldAlert, ChevronDown, Star } from 'lucide-react';
 import { getStaticMapUrl } from '@/lib/geocoding';
 
 interface TicketProps {
@@ -16,6 +16,9 @@ interface TicketProps {
   driverName?: string;
   driverPhone?: string;
   vehicleInfo?: string;
+  partnerRating?: number | null;
+  isRated?: boolean;
+  onRate?: () => void;
   onCancel?: () => void;
   onComplete?: () => void;
   onSelect?: () => void;
@@ -37,6 +40,9 @@ export default function Ticket({
   driverName,
   driverPhone,
   vehicleInfo,
+  partnerRating,
+  isRated,
+  onRate,
   onCancel,
   onComplete,
   onSelect,
@@ -161,7 +167,14 @@ export default function Ticket({
                 <>
                   <div className="flex items-center justify-between text-xs border-b border-dashed border-gazie-navy/10 pb-1">
                     <span className="font-semibold text-gazie-navy">Driver:</span>
-                    <span className="font-bold">{driverName}</span>
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <span>{driverName}</span>
+                      {typeof partnerRating === 'number' && partnerRating > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-amber-800 bg-amber-100/80 border border-amber-300 px-1.5 py-0.2 rounded-full text-[9px] font-bold">
+                          <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" /> {partnerRating.toFixed(1)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {vehicleInfo && (
                     <div className="flex items-center justify-between text-xs border-b border-dashed border-gazie-navy/10 pb-1">
@@ -196,7 +209,14 @@ export default function Ticket({
                 <>
                   <div className="flex items-center justify-between text-xs border-b border-dashed border-gazie-navy/10 pb-1">
                     <span className="font-semibold text-gazie-navy">Rider:</span>
-                    <span className="font-bold">{riderName}</span>
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <span>{riderName}</span>
+                      {typeof partnerRating === 'number' && partnerRating > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-amber-800 bg-amber-100/80 border border-amber-300 px-1.5 py-0.2 rounded-full text-[9px] font-bold">
+                          <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" /> {partnerRating.toFixed(1)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {riderPhone && (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs pt-1">
@@ -274,28 +294,41 @@ export default function Ticket({
           </div>
 
           {/* Action buttons if available */}
-          {(((status === 'pending' || status === 'matched') && (onCancel || onComplete)) || onSelect) && (
-            <div className="flex gap-2 mt-1">
+          {(((status === 'pending' || status === 'matched' || status === 'completed') && (onCancel || onComplete || onRate)) || onSelect) && (
+            <div className="flex flex-wrap gap-2 mt-1">
               {status === 'matched' && role === 'driver' && onComplete && (
                 <button
                   onClick={onComplete}
-                  className="flex-1 text-[11px] font-bold bg-gazie-green text-white py-1.5 rounded-lg border border-gazie-green hover:bg-gazie-navy hover:text-white transition-all duration-200 cursor-pointer"
+                  className="flex-1 min-w-[120px] text-[11px] font-bold bg-gazie-green text-white py-1.5 rounded-lg border border-gazie-green hover:bg-gazie-navy hover:text-white transition-all duration-200 cursor-pointer"
                 >
                   Mark Completed
+                </button>
+              )}
+              {onRate && (
+                <button
+                  onClick={onRate}
+                  className={`flex-1 min-w-[120px] text-[11px] font-bold py-1.5 px-3 rounded-lg border transition-all duration-200 cursor-pointer flex items-center justify-center gap-1 shadow-sm ${
+                    isRated 
+                      ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                      : 'bg-gazie-yellow text-gazie-navy border-gazie-navy hover:bg-gazie-navy hover:text-gazie-paper'
+                  }`}
+                >
+                  <Star className={`w-3.5 h-3.5 ${isRated ? 'fill-amber-500 text-amber-500' : 'fill-gazie-navy text-gazie-navy'}`} />
+                  {isRated ? 'Rated ✓' : 'Rate Commute'}
                 </button>
               )}
               {onCancel && (
                 <button
                   onClick={onCancel}
-                  className="flex-1 text-[11px] font-bold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 rounded-lg transition-all duration-200 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap"
+                  className="flex-1 min-w-[100px] text-[11px] font-bold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 rounded-lg transition-all duration-200 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap"
                 >
-                  Cancel Booking
+                  Cancel
                 </button>
               )}
               {onSelect && (
                 <button
                   onClick={onSelect}
-                  className="flex-1 text-[11px] font-bold bg-gazie-navy text-gazie-paper border border-gazie-navy hover:bg-gazie-yellow hover:text-gazie-navy py-1.5 rounded-lg transition-all duration-200 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap"
+                  className="flex-1 min-w-[120px] text-[11px] font-bold bg-gazie-navy text-gazie-paper border border-gazie-navy hover:bg-gazie-yellow hover:text-gazie-navy py-1.5 rounded-lg transition-all duration-200 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap"
                 >
                   {selectLabel || 'Select Commute'}
                 </button>
