@@ -84,8 +84,19 @@ export interface AppNotification {
 export interface IncidentReport {
   id: string;
   reporter_id: string;
+  reported_id?: string | null;
+  booking_id?: string | null;
+  incident_type?: 'accident' | 'threat' | 'medical' | 'service_issue' | string;
+  severity?: 'level_1' | 'level_2' | 'level_3' | string;
+  trip_code?: string | null;
+  current_location?: string | null;
+  involved_party?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  immediate_action_taken?: string | null;
   description: string;
   photo_url?: string | null;
+  status?: 'open' | 'triaged' | 'resolved' | string;
   created_at: string;
 }
 
@@ -98,4 +109,3 @@ export interface Rating {
   feedback?: string | null;
   created_at: string;
 }
-

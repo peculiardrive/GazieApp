@@ -532,6 +532,37 @@ export default function AdminDashboard() {
     return `${formatPeriod(hour)} - ${formatPeriod(nextHour)}`;
   };
 
+  const getIncidentSeverityConfig = (severity?: string) => {
+    switch (severity) {
+      case 'level_3':
+        return {
+          label: 'Level 3 Emergency',
+          className: 'bg-red-700 text-white border-red-800',
+          action: 'Call emergency responders, contact both trip parties, and preserve all evidence.',
+        };
+      case 'level_2':
+        return {
+          label: 'Level 2 Urgent',
+          className: 'bg-orange-100 text-orange-900 border-orange-300',
+          action: 'Contact the reporter, pause the trip if active, and verify rider/driver location.',
+        };
+      default:
+        return {
+          label: 'Level 1 Service',
+          className: 'bg-gazie-yellow text-gazie-navy border-gazie-navy/20',
+          action: 'Review the report, message the affected party, and close when resolved.',
+        };
+    }
+  };
+
+  const formatIncidentType = (type?: string) => {
+    if (!type) return 'Service Issue';
+    return type
+      .split('_')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gazie-paper text-gazie-navy">
       <Navbar />
@@ -784,13 +815,84 @@ export default function AdminDashboard() {
                 <div className="space-y-3">
                   {incidents.map((inc) => {
                     const reporter = profiles.find(p => p.id === inc.reporter_id);
+                    const severityConfig = getIncidentSeverityConfig(inc.severity);
                     return (
-                      <div key={inc.id} className="p-3 bg-red-50/50 border border-red-200 rounded-xl space-y-2 text-xs">
-                        <div className="flex justify-between items-center font-bold">
-                          <span className="text-red-900">{reporter?.full_name || 'Reporter'} ({reporter?.phone})</span>
-                          <span className="text-[9px] font-mono text-red-700/80">{new Date(inc.created_at).toLocaleString()}</span>
+                      <div key={inc.id} className="p-4 bg-red-50/50 border border-red-200 rounded-xl space-y-3 text-xs">
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className={`px-2 py-1 rounded border text-[9px] font-extrabold uppercase ${severityConfig.className}`}>
+                                {severityConfig.label}
+                              </span>
+                              <span className="px-2 py-1 rounded border border-red-200 bg-white text-red-900 text-[9px] font-extrabold uppercase">
+                                {formatIncidentType(inc.incident_type)}
+                              </span>
+                              <span className="px-2 py-1 rounded border border-gazie-navy/15 bg-white text-gazie-navy text-[9px] font-mono font-bold uppercase">
+                                {inc.status || 'open'}
+                              </span>
+                            </div>
+                            <span className="text-red-950 font-bold block">
+                              {reporter?.full_name || 'Reporter'} {reporter?.phone ? `(${reporter.phone})` : ''}
+                            </span>
+                          </div>
+                          <div className="text-left sm:text-right space-y-1">
+                            <span className="text-[9px] font-mono text-red-700/80 block">{new Date(inc.created_at).toLocaleString()}</span>
+                            <span className="text-[9px] font-mono text-gazie-navy/60 block">Report: {inc.id.substring(0, 8)}</span>
+                          </div>
                         </div>
-                        <p className="text-gray-700 font-medium">{inc.description}</p>
+
+                        <div className="grid sm:grid-cols-2 gap-2">
+                          <div className="bg-white border border-red-100 rounded-lg p-2">
+                            <span className="text-[9px] uppercase font-bold text-gazie-navy/50 flex items-center gap-1">
+                              <FileText className="w-3 h-3" /> Trip Identification
+                            </span>
+                            <span className="font-mono font-bold text-gazie-navy block mt-1">{inc.trip_code || 'Not provided'}</span>
+                          </div>
+                          <div className="bg-white border border-red-100 rounded-lg p-2">
+                            <span className="text-[9px] uppercase font-bold text-gazie-navy/50 flex items-center gap-1">
+                              <MapPin className="w-3 h-3" /> Current Location
+                            </span>
+                            <span className="font-bold text-gazie-navy block mt-1">{inc.current_location || 'Not provided'}</span>
+                          </div>
+                          <div className="bg-white border border-red-100 rounded-lg p-2">
+                            <span className="text-[9px] uppercase font-bold text-gazie-navy/50 flex items-center gap-1">
+                              <Users className="w-3 h-3" /> Involved Party
+                            </span>
+                            <span className="font-bold text-gazie-navy block mt-1">{inc.involved_party || 'Not provided'}</span>
+                          </div>
+                          <div className="bg-white border border-red-100 rounded-lg p-2">
+                            <span className="text-[9px] uppercase font-bold text-gazie-navy/50 flex items-center gap-1">
+                              <Phone className="w-3 h-3" /> Emergency Contact
+                            </span>
+                            <span className="font-bold text-gazie-navy block mt-1">
+                              {[inc.emergency_contact_name, inc.emergency_contact_phone].filter(Boolean).join(' - ') || reporter?.emergency_contact || 'Not provided'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="bg-white border border-red-100 rounded-lg p-3 space-y-2">
+                          <div>
+                            <span className="text-[9px] uppercase font-bold text-gazie-navy/50">Immediate Action Taken</span>
+                            <p className="text-gazie-navy/75 font-medium mt-1">{inc.immediate_action_taken || 'No action note provided.'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[9px] uppercase font-bold text-gazie-navy/50">Incident Details</span>
+                            <p className="text-gray-700 font-medium mt-1">{inc.description}</p>
+                          </div>
+                        </div>
+
+                        <div className="bg-red-900 text-white rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <span className="font-bold leading-snug">{severityConfig.action}</span>
+                          <a
+                            href={`https://wa.me/2348164737221?text=${encodeURIComponent(`Emergency report ${inc.id.substring(0, 8)}: ${inc.trip_code || 'No trip ID'} at ${inc.current_location || 'unknown location'}`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white text-red-900 text-[10px] font-extrabold hover:bg-gazie-yellow transition-colors"
+                          >
+                            <Phone className="w-3.5 h-3.5" /> Escalate
+                          </a>
+                        </div>
+
                         {inc.photo_url && (
                           <button
                             onClick={() => setPreviewFileUrl(inc.photo_url)}

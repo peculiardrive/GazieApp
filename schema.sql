@@ -164,10 +164,33 @@ CREATE POLICY "Admins can update any booking"
 CREATE TABLE IF NOT EXISTS public.incidents (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   reporter_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  reported_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  booking_id UUID REFERENCES public.bookings(id) ON DELETE SET NULL,
+  incident_type TEXT DEFAULT 'service_issue' CHECK (incident_type IN ('accident', 'threat', 'medical', 'service_issue')),
+  severity TEXT DEFAULT 'level_1' CHECK (severity IN ('level_1', 'level_2', 'level_3')),
+  trip_code TEXT,
+  current_location TEXT,
+  involved_party TEXT,
+  emergency_contact_name TEXT,
+  emergency_contact_phone TEXT,
+  immediate_action_taken TEXT,
   description TEXT NOT NULL,
   photo_url TEXT, -- Optional incident photo
+  status TEXT DEFAULT 'open' CHECK (status IN ('open', 'triaged', 'resolved')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS reported_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL;
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS booking_id UUID REFERENCES public.bookings(id) ON DELETE SET NULL;
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS incident_type TEXT DEFAULT 'service_issue';
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS severity TEXT DEFAULT 'level_1';
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS trip_code TEXT;
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS current_location TEXT;
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS involved_party TEXT;
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS emergency_contact_name TEXT;
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS emergency_contact_phone TEXT;
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS immediate_action_taken TEXT;
+ALTER TABLE public.incidents ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open';
 
 -- Enable RLS
 ALTER TABLE public.incidents ENABLE ROW LEVEL SECURITY;
@@ -523,6 +546,5 @@ CREATE POLICY "Users can create rating for completed trip"
 CREATE INDEX IF NOT EXISTS idx_ratings_reviewee_id ON public.ratings(reviewee_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_reviewer_id ON public.ratings(reviewer_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_booking_id ON public.ratings(booking_id);
-
 
 
