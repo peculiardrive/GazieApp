@@ -34,38 +34,51 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+-- Helper function to check if the current user is an admin without RLS recursion
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
 -- Profiles Policies
+DROP POLICY IF EXISTS "Public profiles are viewable by anyone" ON public.profiles;
 CREATE POLICY "Public profiles are viewable by anyone" 
   ON public.profiles FOR SELECT 
   USING (true);
 
+DROP POLICY IF EXISTS "Users and admins can insert profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Allow user signup or admin insert" ON public.profiles;
 CREATE POLICY "Users and admins can insert profiles" 
   ON public.profiles FOR INSERT 
   WITH CHECK (
     auth.uid() = id OR
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
+    auth.uid() IS NULL OR
+    public.is_admin()
   );
 
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users and admins can update profiles" ON public.profiles;
 CREATE POLICY "Users can update their own profile" 
   ON public.profiles FOR UPDATE 
   USING (
     auth.uid() = id OR 
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
+    public.is_admin()
+  )
+  WITH CHECK (
+    auth.uid() = id OR 
+    public.is_admin()
   );
 
+DROP POLICY IF EXISTS "Admins can delete any profile" ON public.profiles;
 CREATE POLICY "Admins can delete any profile" 
   ON public.profiles FOR DELETE 
   USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
+    public.is_admin()
   );
 
 -- Trigger to automatically create a profile after signup
