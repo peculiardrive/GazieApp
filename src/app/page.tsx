@@ -388,7 +388,11 @@ export default function Home() {
             <span className="hidden sm:inline text-gazie-navy/20">|</span>
             <span>Support Email: <a href="mailto:gaziecommute@gmail.com" className="underline font-bold hover:text-gazie-navy">gaziecommute@gmail.com</a></span>
           </div>
-          <div className="flex justify-center items-center gap-4 pt-2 border-t border-dashed border-gazie-navy/10 text-[10px]">
+          <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 pt-2 border-t border-dashed border-gazie-navy/10 text-[10px]">
+            <Link href="/support" className="underline hover:text-gazie-navy text-gazie-navy/70 transition font-semibold">
+              Help & Support
+            </Link>
+            <span className="text-gazie-navy/30">&bull;</span>
             <Link href="/privacy" className="underline hover:text-gazie-navy text-gazie-navy/60 transition font-semibold">
               Privacy Policy
             </Link>

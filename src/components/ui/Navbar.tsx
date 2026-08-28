@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ShieldCheck, LogOut, User, ShieldAlert, Shield } from 'lucide-react';
+import { ShieldCheck, LogOut, User, ShieldAlert, Shield, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -115,6 +115,14 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             {getVerificationBadge()}
             
+            <Link
+              href="/support"
+              className="p-1.5 rounded-lg border border-gazie-navy/30 text-gazie-navy hover:bg-gazie-yellow/30 transition-all cursor-pointer"
+              title="Customer Support & FAQ"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </Link>
+
             <Link
               href="/profile"
               className="p-1.5 rounded-lg border border-gazie-navy text-gazie-navy hover:bg-gazie-navy hover:text-white transition-all cursor-pointer"
