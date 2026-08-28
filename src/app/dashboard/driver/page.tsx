@@ -198,8 +198,23 @@ export default function DriverDashboard() {
       setIsVerificationModalOpen(true);
       return;
     }
-    if (!postPickup || !postDestination || !postDate || !postTime || !postSeats || !postFare) {
+    if (!postPickup || !postDestination || !postDate || !postTime || !postSeats || postFare === '') {
       showToast('Please fill in all required fields.', 'warning');
+      return;
+    }
+
+    const parsedFare = parseFloat(postFare);
+    if (isNaN(parsedFare) || parsedFare < 0) {
+      showToast('Please enter a valid cost contribution (₦0 or higher).', 'warning');
+      return;
+    }
+    if (parsedFare > 2000) {
+      showToast('Carpooling Rule: Fuel contribution is capped at ₦2,000 to maintain non-commercial status.', 'warning');
+      return;
+    }
+    const parsedSeats = parseInt(postSeats);
+    if (parsedSeats > 4) {
+      showToast('Carpooling Rule: Private vehicles may offer a maximum of 4 passenger seats.', 'warning');
       return;
     }
 
@@ -691,23 +706,36 @@ export default function DriverDashboard() {
 
         {activeTab === 'postings' && (
           <>
+            {/* Community Carpooling Notice Card */}
+            <div className="bg-amber-50/90 border-2 border-amber-300 rounded-2xl p-4 flex items-start gap-3 text-left">
+              <AlertTriangle className="w-5 h-5 text-amber-800 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <span className="font-display font-black text-xs uppercase text-amber-900">
+                  Community Carpooling Rule (Non-Commercial Pilot)
+                </span>
+                <p className="text-[11px] text-amber-950/80 font-medium leading-relaxed">
+                  Only post pre-planned commutes you are already driving. Commercial taxi operations, on-demand hailing, airport charters, and surge pricing are strictly prohibited. Payments are voluntary fuel cost offsets (₦0 allowed for free community lifts).
+                </p>
+              </div>
+            </div>
+
             {/* Post a Ride Form */}
             <section className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-4">
               <div className="border-b border-dashed border-gazie-navy/10 pb-3 flex justify-between items-center">
-                <h2 className="font-display font-extrabold text-lg tracking-tight">Post a Specific Ride</h2>
+                <h2 className="font-display font-extrabold text-lg tracking-tight">Post a Daily Commute</h2>
                 <span className="font-mono text-[10px] bg-gazie-yellow text-gazie-navy px-2 py-0.5 rounded font-bold uppercase">
-                  Verified Only
+                  Verified Carpool
                 </span>
               </div>
 
               <form onSubmit={handlePostRide} className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Pickup Area</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Pickup Area / Departure Landmark</label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gazie-navy/40" />
                     <input
                       type="text"
-                      placeholder="e.g. Lugbe Junction"
+                      placeholder="e.g. Lugbe (FHA Gate / Trademore / VoA)"
                       value={postPickup}
                       onChange={(e) => setPostPickup(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold"
@@ -718,7 +746,7 @@ export default function DriverDashboard() {
 
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Destination (Drop-off)</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Destination (Drop-off Hub)</label>
                     <span className="text-[9px] text-gazie-navy/50 font-semibold">Select or type custom hub</span>
                   </div>
                   <div className="relative">
@@ -790,26 +818,39 @@ export default function DriverDashboard() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Seats Available</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Empty Seats (Max 4)</label>
                     <input
                       type="number"
                       value={postSeats}
                       onChange={(e) => setPostSeats(e.target.value)}
                       className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-gazie-yellow"
                       min="1"
-                      max="8"
+                      max="4"
                       required
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Fare per Seat (₦)</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                        Fuel Contribution (₦)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setPostFare('0')}
+                        className="text-[9px] font-bold text-gazie-green underline cursor-pointer hover:opacity-80"
+                      >
+                        Free (₦0)
+                      </button>
+                    </div>
                     <input
                       type="number"
                       value={postFare}
                       onChange={(e) => setPostFare(e.target.value)}
                       className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-gazie-yellow"
                       min="0"
+                      max="2000"
+                      placeholder="e.g. 800 (₦0 for free lift)"
                       required
                     />
                   </div>
@@ -824,7 +865,7 @@ export default function DriverDashboard() {
                     className="w-4 h-4 text-gazie-navy bg-gazie-paper border-gazie-navy rounded focus:ring-0 focus:outline-none cursor-pointer"
                   />
                   <label htmlFor="isRecurring" className="text-xs font-semibold text-gazie-navy cursor-pointer select-none">
-                    Repeat this route daily (Mon-Fri)
+                    Repeat this routine daily (Mon-Fri)
                   </label>
                 </div>
 

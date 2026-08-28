@@ -44,24 +44,107 @@ export default function TermsPage() {
               Platform Role & Purpose
             </h2>
             <p>
-              <strong>Gazie Commute Technologies Ltd.</strong> (&ldquo;Gazie Commute&rdquo;, &ldquo;we&rdquo;, or &ldquo;our&rdquo;) provides a software matchmaking platform that connects verified private car owners (&ldquo;Drivers&rdquo;) and fellow commuters (&ldquo;Riders&rdquo;) travelling along the same daily route within Abuja and surrounding corridors to share rides and offset fuel costs.
+              <strong>Gazie Commute Technologies Ltd.</strong> (&ldquo;Gazie Commute&rdquo;, &ldquo;we&rdquo;, or &ldquo;our&rdquo;) operates a digital matchmaking software platform designed exclusively to facilitate <strong>non-commercial peer-to-peer community carpooling</strong> among verified private car owners (&ldquo;Drivers&rdquo;) and fellow commuters (&ldquo;Riders&rdquo;) travelling along the same daily route within Abuja and surrounding residential corridors.
             </p>
             <div className="bg-amber-50/80 border-2 border-amber-300 rounded-2xl p-4 text-xs font-medium text-amber-950 flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <span className="font-bold block uppercase tracking-wide text-amber-900">Peer-to-Peer Carpooling Nature</span>
+                <span className="font-bold block uppercase tracking-wide text-amber-900">Strictly Non-Commercial Carpooling Intermediary</span>
                 <p className="leading-relaxed">
-                  Gazie Commute operates as a digital matchmaking technology intermediary. Drivers offering empty seats in their personal vehicles are independent private commuters sharing daily travel, not commercial taxi operators, public transport carriers, or employees of Gazie Commute.
+                  Gazie Commute is a technology matchmaking tool, not a transportation carrier, taxi company, on-demand dispatch service, or employer. Drivers offering spare capacity in their private motor vehicles are independent private commuters sharing journeys they were already making, not commercial taxi operators or public transport providers.
                 </p>
               </div>
             </div>
           </section>
 
-          {/* Section 2 */}
+          {/* Section 2: Non-Commercial Community Carpooling Charter & Enforceable Rules */}
+          <section className="space-y-4 bg-white border-2 border-gazie-navy rounded-2xl p-6 shadow-sm">
+            <div className="border-b border-dashed border-gazie-navy/15 pb-3">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gazie-navy text-white text-[10px] font-bold uppercase tracking-wider mb-1">
+                <ShieldCheck className="w-3.5 h-3.5" /> Non-Commercial Carpooling Charter
+              </div>
+              <h2 className="font-display font-black text-xl tracking-tight text-gazie-navy uppercase">
+                2. Community Carpooling Rules & Operating Constraints
+              </h2>
+            </div>
+
+            <p className="text-xs font-semibold text-gazie-navy/80">
+              To preserve the non-commercial, community-first nature of the platform and maintain compliance with Nigerian transport and traffic regulations, all participants must strictly adhere to the following enforceable rules:
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">1. Pre-Planned Journeys Only</span>
+                <p className="text-gazie-navy/70">Drivers may only post journeys they were already planning to make for their own personal, employment, or educational purposes.</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">2. No On-Demand Dispatch</span>
+                <p className="text-gazie-navy/70">On-demand taxi dispatch, street hailing, and real-time hailing algorithms are strictly prohibited. All carpools must be scheduled in advance.</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">3. No Airport Taxi or Charter Services</span>
+                <p className="text-gazie-navy/70">The platform cannot be used for customized private charter, chauffeuring, inter-state haulage, or commercial airport taxi hire.</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">4. No Full-Time Commercial Drivers</span>
+                <p className="text-gazie-navy/70">Commercial taxi drivers, commercial bus operators, and full-time transport operators are prohibited from registering during the pilot.</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">5. Route & Community Verification</span>
+                <p className="text-gazie-navy/70">Drivers must provide verifiable details of their regular daily commute corridor and residential estate, workplace, or institutional community connection.</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">6. Strict Non-Profit Cost Contributions</span>
+                <p className="text-gazie-navy/70">Passenger payments are strictly defined as <strong>&ldquo;Cost Contributions&rdquo;</strong> to offset a documented share of fuel and vehicle running costs, not commercial fares.</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">7. No Commercial Profit from Passenger Payments</span>
+                <p className="text-gazie-navy/70">Drivers must not profit from repeated passenger payments. Total contributions collected across all seats cannot exceed the reasonable cost of the trip.</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">8. Absolute Prohibition of Surge Pricing</span>
+                <p className="text-gazie-navy/70">Gazie Commute implements zero surge pricing algorithms. Contributions remain fixed, transparent, and capped regardless of weather or rush-hour demand.</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">9. Zero Percentage Platform Commission</span>
+                <p className="text-gazie-navy/70">Gazie does not deduct any percentage cut from driver fuel contributions. Commuters only pay a flat nominal match unlock fee (or ₦0 during promotional pilot periods).</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">10. Daily Journey Limits</span>
+                <p className="text-gazie-navy/70">To prevent commercial exploitation, drivers are limited to a maximum of <strong>two (2) scheduled carpool journeys per calendar day</strong> (morning commute and evening return).</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">11. Closed Community Pilot Structure</span>
+                <p className="text-gazie-navy/70">The pilot is restricted to verified residential estates, verified corporate corridors, and civil service commuting routes across Abuja.</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1">
+                <span className="font-bold text-gazie-navy block">12. Free Rides & Reciprocal Carpools Permitted</span>
+                <p className="text-gazie-navy/70">Drivers are encouraged and permitted to offer seats for free (₦0 Cost Contribution) or arrange reciprocal alternate-day driving exchanges with neighbors.</p>
+              </div>
+
+              <div className="p-3.5 bg-gazie-paper/50 border border-gazie-navy/15 rounded-xl space-y-1 col-span-1 md:col-span-2">
+                <span className="font-bold text-gazie-navy block">13. Capped Cost Contribution & Calculation Transparency</span>
+                <p className="text-gazie-navy/70">Gazie Commute calculates and maintains standard fuel benchmark records across all Abuja corridors (e.g. Lugbe, Kubwa, Lokogoma, Apo, Gwarinpa into CBD/Secretariat) to ensure suggested seat contributions remain strictly below prevailing fuel costs and below commercial taxi rates.</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 3 */}
           <section className="space-y-3">
             <h2 className="font-display font-extrabold text-lg uppercase tracking-tight text-gazie-navy flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-gazie-navy text-white inline-flex items-center justify-center text-xs">2</span>
-              User Eligibility, Account Security & Verification
+              <span className="w-6 h-6 rounded-full bg-gazie-navy text-white inline-flex items-center justify-center text-xs">3</span>
+              User Eligibility & KYC Verification
             </h2>
             <ul className="list-disc pl-5 space-y-2 font-medium">
               <li><strong>Age & Capacity:</strong> You must be at least eighteen (18) years of age and legally competent to enter binding agreements in Nigeria.</li>
