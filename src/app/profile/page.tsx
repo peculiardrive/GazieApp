@@ -127,8 +127,8 @@ export default function ProfilePage() {
         updateData.driver_fare = parseFloat(driverFare);
       }
 
-      // If all required documents are ready, transition to pending_review
-      const canSubmitReview = hasNIN && hasProof && hasLicense;
+      // If primary ID is uploaded, transition to pending_review (Option 1 Lightweight Pilot KYC)
+      const canSubmitReview = profile.role === 'driver' ? (hasLicense || hasNIN) : hasNIN;
       
       // Only transition to pending_review if they are currently unverified (email_verified or rejected)
       if (canSubmitReview && (profile.verification_status === 'email_verified' || profile.verification_status === 'rejected')) {
@@ -437,15 +437,13 @@ export default function ProfilePage() {
             {(profile?.verification_status === 'email_verified' || profile?.verification_status === 'rejected') && (
               <div className="space-y-4 pt-4 border-t border-dashed border-gazie-navy/10 text-left">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-gazie-navy/60 uppercase tracking-wider">Required Verification Files</span>
+                  <span className="text-xs font-bold text-gazie-navy/70 uppercase tracking-wider">Fast Pilot Verification</span>
                   <span className="font-mono text-[10px] bg-gazie-yellow text-gazie-navy px-2 py-0.5 rounded font-bold uppercase">
                     {(() => {
-                      let required = profile?.role === 'driver' ? 3 : 2;
-                      let count = 0;
-                      if (riderIdFile || profile?.id_url) count++;
-                      if (addressFile || profile?.proof_of_address_url) count++;
-                      if (profile?.role === 'driver' && (driverLicenseFile || profile?.license_url)) count++;
-                      return `${count} of ${required} uploaded`;
+                      let hasPrimary = profile?.role === 'driver' 
+                        ? (driverLicenseFile || profile?.license_url || riderIdFile || profile?.id_url)
+                        : (riderIdFile || profile?.id_url);
+                      return hasPrimary ? '1 of 1 Document Ready ✓' : '0 of 1 Uploaded';
                     })()}
                   </span>
                 </div>
@@ -453,59 +451,62 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* National ID */}
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">National ID (NIN Card/Slip)</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                      National ID (NIN Slip / Card) {profile?.role === 'rider' && '*'}
+                    </label>
                     <div className="border border-dashed border-gazie-navy/35 rounded-lg p-3 text-center relative hover:bg-gazie-paper/5 transition cursor-pointer">
                       <input
                         type="file"
                         accept="image/*,application/pdf"
                         onChange={(e) => setRiderIdFile(e.target.files?.[0] || null)}
                         className="absolute inset-0 opacity-0 cursor-pointer"
-                        required={!profile?.id_url}
                       />
                       <Upload className="w-4 h-4 mx-auto text-gazie-navy/40 mb-1" />
                       <span className="text-[10px] font-semibold block text-ellipsis overflow-hidden whitespace-nowrap">
-                        {riderIdFile ? riderIdFile.name : profile?.id_url ? 'NIN ID Card (Uploaded)' : 'Choose NIN File'}
+                        {riderIdFile ? riderIdFile.name : profile?.id_url ? 'NIN ID Card (Uploaded ✓)' : 'Choose NIN File'}
                       </span>
                     </div>
                   </div>
 
-                  {/* Proof of Address */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Proof of Address (Utility Bill)</label>
-                    <div className="border border-dashed border-gazie-navy/35 rounded-lg p-3 text-center relative hover:bg-gazie-paper/5 transition cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        onChange={(e) => setAddressFile(e.target.files?.[0] || null)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        required={!profile?.proof_of_address_url}
-                      />
-                      <Upload className="w-4 h-4 mx-auto text-gazie-navy/40 mb-1" />
-                      <span className="text-[10px] font-semibold block text-ellipsis overflow-hidden whitespace-nowrap">
-                        {addressFile ? addressFile.name : profile?.proof_of_address_url ? 'Utility Bill (Uploaded)' : 'Choose Utility Bill'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Driver License */}
+                  {/* Driver License (Drivers Only) */}
                   {profile?.role === 'driver' && (
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Driver's Licence</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                        Driver's Licence *
+                      </label>
                       <div className="border border-dashed border-gazie-navy/35 rounded-lg p-3 text-center relative hover:bg-gazie-paper/5 transition cursor-pointer">
                         <input
                           type="file"
                           accept="image/*,application/pdf"
                           onChange={(e) => setDriverLicenseFile(e.target.files?.[0] || null)}
                           className="absolute inset-0 opacity-0 cursor-pointer"
-                          required={!profile?.license_url}
                         />
                         <Upload className="w-4 h-4 mx-auto text-gazie-navy/40 mb-1" />
                         <span className="text-[10px] font-semibold block text-ellipsis overflow-hidden whitespace-nowrap">
-                          {driverLicenseFile ? driverLicenseFile.name : profile?.license_url ? 'Driver\'s Licence (Uploaded)' : 'Choose Licence File'}
+                          {driverLicenseFile ? driverLicenseFile.name : profile?.license_url ? 'Driver\'s Licence (Uploaded ✓)' : 'Choose Licence File'}
                         </span>
                       </div>
                     </div>
                   )}
+
+                  {/* Optional Proof of Address */}
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/50 block">
+                      Proof of Address (Utility Bill) <span className="text-[9px] font-normal italic lowercase">(optional)</span>
+                    </label>
+                    <div className="border border-dashed border-gazie-navy/20 rounded-lg p-2.5 text-center relative hover:bg-gazie-paper/5 transition cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={(e) => setAddressFile(e.target.files?.[0] || null)}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                      <Upload className="w-3.5 h-3.5 mx-auto text-gazie-navy/30 mb-0.5" />
+                      <span className="text-[9px] font-semibold block text-ellipsis overflow-hidden whitespace-nowrap text-gazie-navy/60">
+                        {addressFile ? addressFile.name : profile?.proof_of_address_url ? 'Utility Bill (Uploaded ✓)' : 'Optional — Choose Utility Bill'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
