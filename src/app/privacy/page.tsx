@@ -345,11 +345,12 @@ export default function PrivacyPage() {
             <p className="text-xs text-gazie-navy/70 leading-relaxed">
               We may update this Privacy Policy periodically to reflect technological improvements, product feature additions, or legislative changes. When material changes occur, we will notify registered commuters via email and dashboard notification prior to the change taking effect.
             </p>
-            <div className="p-3.5 bg-white border border-gazie-navy/20 rounded-xl text-xs space-y-1 font-mono">
-              <p><strong>Data Protection Officer:</strong> Gazie Commute Legal & Compliance Unit</p>
-              <p><strong>Direct Email:</strong> <a href="mailto:gaziecommute@gmail.com" className="underline font-bold text-gazie-green">gaziecommute@gmail.com</a></p>
+            <div className="p-4 bg-white border-2 border-gazie-navy/20 rounded-2xl text-xs space-y-1.5 font-mono shadow-sm">
+              <p className="font-sans font-bold text-sm text-gazie-navy">Gazie Commute Technologies Ltd.</p>
+              <p><strong>CAC Registration / RC Number:</strong> <span className="font-bold text-gazie-navy">RC: 7924018</span></p>
+              <p><strong>Registered Business Address:</strong> Federal Capital Territory (FCT), Abuja, Nigeria</p>
+              <p><strong>Official Corporate Email:</strong> <a href="mailto:gaziecommute@gmail.com" className="underline font-bold text-gazie-green">gaziecommute@gmail.com</a></p>
               <p><strong>Support WhatsApp:</strong> <a href="https://wa.me/2348164737221" target="_blank" rel="noopener noreferrer" className="underline font-bold text-gazie-green">+234 816 473 7221</a></p>
-              <p><strong>Operating Base:</strong> Abuja, Federal Capital Territory (FCT), Nigeria</p>
             </div>
             <p className="text-[11px] text-gazie-navy/60 pt-1">
               For platform commute rules, liability exclusions, and driver/passenger conduct standards, please review our{' '}

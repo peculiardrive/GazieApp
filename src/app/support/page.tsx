@@ -175,6 +175,14 @@ export default function SupportPage() {
           </div>
         </section>
 
+        {/* Official Corporate Identity Block */}
+        <div className="p-4 bg-white border-2 border-gazie-navy/20 rounded-2xl text-xs space-y-1.5 font-mono shadow-sm text-center">
+          <p className="font-sans font-bold text-sm text-gazie-navy">Gazie Commute Technologies Ltd.</p>
+          <p><strong>CAC Registration / RC Number:</strong> <span className="font-bold text-gazie-navy">RC: 7924018</span></p>
+          <p><strong>Registered Address:</strong> Federal Capital Territory (FCT), Abuja, Nigeria</p>
+          <p><strong>Official Corporate Email:</strong> <a href="mailto:gaziecommute@gmail.com" className="underline font-bold text-gazie-green">gaziecommute@gmail.com</a></p>
+        </div>
+
       </main>
     </div>
   );

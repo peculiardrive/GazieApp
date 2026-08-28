@@ -220,11 +220,12 @@ export default function TermsPage() {
             <p className="text-xs text-gazie-navy/70 leading-relaxed">
               If you have any questions regarding these Terms of Service, liability allocations, or consumer rights inquiries, please contact our Legal & Support Team:
             </p>
-            <div className="p-3.5 bg-white border border-gazie-navy/20 rounded-xl text-xs space-y-1 font-mono">
-              <p><strong>Entity:</strong> Gazie Commute Technologies Ltd.</p>
-              <p><strong>Email:</strong> <a href="mailto:gaziecommute@gmail.com" className="underline font-bold text-gazie-green">gaziecommute@gmail.com</a></p>
-              <p><strong>Support WhatsApp:</strong> <a href="https://wa.me/2348164737221" target="_blank" rel="noopener noreferrer" className="underline font-bold text-gazie-green">+234 816 473 7221</a></p>
-              <p><strong>Jurisdiction:</strong> Abuja, Federal Capital Territory (FCT), Nigeria</p>
+            <div className="p-4 bg-white border-2 border-gazie-navy/20 rounded-2xl text-xs space-y-1.5 font-mono shadow-sm">
+              <p className="font-sans font-bold text-sm text-gazie-navy">Gazie Commute Technologies Ltd.</p>
+              <p><strong>CAC Registration / RC Number:</strong> <span className="font-bold text-gazie-navy">RC: 7924018</span></p>
+              <p><strong>Registered Business Address:</strong> Federal Capital Territory (FCT), Abuja, Nigeria</p>
+              <p><strong>Official Corporate Email:</strong> <a href="mailto:gaziecommute@gmail.com" className="underline font-bold text-gazie-green">gaziecommute@gmail.com</a></p>
+              <p><strong>Official Support WhatsApp:</strong> <a href="https://wa.me/2348164737221" target="_blank" rel="noopener noreferrer" className="underline font-bold text-gazie-green">+234 816 473 7221</a></p>
             </div>
             <p className="text-[11px] text-gazie-navy/60 pt-1">
               For complete details on our data protection safeguards and NDPA compliance, please review our{' '}

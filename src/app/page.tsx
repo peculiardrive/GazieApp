@@ -372,32 +372,40 @@ export default function Home() {
         </section>
         */}
 
-        <div className="w-full text-center text-xs text-gazie-navy/60 font-medium border-t border-dashed border-gazie-navy/10 pt-6 space-y-4">
-          <p className="flex items-center justify-center">
-            <span>🛡️ Launching v1 FREE | Cash-direct commutes</span>
+        <div className="w-full text-center text-xs text-gazie-navy/70 font-medium border-t border-dashed border-gazie-navy/15 pt-6 space-y-3.5">
+          <p className="flex items-center justify-center font-bold text-gazie-navy">
+            <span>🛡️ Community-Verified Commuting Network &bull; Abuja & Environs</span>
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs">
             <a 
               href="https://wa.me/2348164737221" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2D6A4F] text-white font-bold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#2D6A4F] text-white font-bold text-xs hover:opacity-90 transition shadow-sm cursor-pointer"
             >
-              💬 Chat with us on WhatsApp
+              💬 WhatsApp: +234 816 473 7221
             </a>
-            <span className="hidden sm:inline text-gazie-navy/20">|</span>
-            <span>Support Email: <a href="mailto:gaziecommute@gmail.com" className="underline font-bold hover:text-gazie-navy">gaziecommute@gmail.com</a></span>
+            <span className="hidden sm:inline text-gazie-navy/30">&bull;</span>
+            <span>Official Email: <a href="mailto:gaziecommute@gmail.com" className="underline font-bold text-gazie-navy hover:text-gazie-green">gaziecommute@gmail.com</a></span>
           </div>
-          <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 pt-2 border-t border-dashed border-gazie-navy/10 text-[10px]">
+
+          <div className="bg-white/80 border border-gazie-navy/15 rounded-xl p-3 max-w-md mx-auto text-[11px] space-y-0.5 text-gazie-navy/80 shadow-sm">
+            <p className="font-bold text-gazie-navy text-xs">Gazie Commute Technologies Ltd.</p>
+            <p className="font-mono text-[10px]">CAC Registration / RC Number: <span className="font-bold text-gazie-navy">RC: 7924018</span></p>
+            <p className="text-[10px] text-gazie-navy/70">Registered Address: Federal Capital Territory (FCT), Abuja, Nigeria</p>
+          </div>
+
+          <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 pt-1 text-[10px]">
             <Link href="/support" className="underline hover:text-gazie-navy text-gazie-navy/70 transition font-semibold">
               Help & Support
             </Link>
             <span className="text-gazie-navy/30">&bull;</span>
-            <Link href="/privacy" className="underline hover:text-gazie-navy text-gazie-navy/60 transition font-semibold">
+            <Link href="/privacy" className="underline hover:text-gazie-navy text-gazie-navy/70 transition font-semibold">
               Privacy Policy
             </Link>
             <span className="text-gazie-navy/30">&bull;</span>
-            <Link href="/terms" className="underline hover:text-gazie-navy text-gazie-navy/60 transition font-semibold">
+            <Link href="/terms" className="underline hover:text-gazie-navy text-gazie-navy/70 transition font-semibold">
               Terms & Conditions
             </Link>
           </div>
