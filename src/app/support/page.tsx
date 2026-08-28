@@ -22,8 +22,8 @@ export default function SupportPage() {
       a: "To maintain platform security, verify KYC identities, and prevent ghost bookings, a nominal ₦50 unlock fee is processed via Paystack when confirming a match. This unlocks the driver's direct contact and vehicle registration details."
     },
     {
-      q: "What if my ride is cancelled or full after payment?",
-      a: "If a ride posting fills up or is cancelled by the driver after you unlock, our system automatically logs the incident. You can contact support on WhatsApp or email us at gaziecommute@gmail.com for an immediate platform fee refund or credit."
+      q: "What is the Refund Policy for platform unlock fees?",
+      a: "You are entitled to a 100% refund if a driver cancels, fails to show up within 15 minutes of departure, alters the schedule without your consent, or if a system/billing glitch occurs. To request a refund, message WhatsApp (+234 816 473 7221) or email gaziecommute@gmail.com with your Booking ID / Ticket Code and Paystack reference. Requests are acknowledged within 2–4 hours and reviewed within 24 hours. Approved refunds are reversed to your original bank account/card within 1–3 business days or credited instantly as a platform pass."
     },
     {
       q: "What is the cancellation policy?",
