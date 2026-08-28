@@ -39,14 +39,29 @@ CREATE POLICY "Public profiles are viewable by anyone"
   ON public.profiles FOR SELECT 
   USING (true);
 
-CREATE POLICY "Users can insert their own profile" 
+CREATE POLICY "Users and admins can insert profiles" 
   ON public.profiles FOR INSERT 
-  WITH CHECK (auth.uid() = id);
+  WITH CHECK (
+    auth.uid() = id OR
+    EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
 
 CREATE POLICY "Users can update their own profile" 
   ON public.profiles FOR UPDATE 
   USING (
     auth.uid() = id OR 
+    EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+CREATE POLICY "Admins can delete any profile" 
+  ON public.profiles FOR DELETE 
+  USING (
     EXISTS (
       SELECT 1 FROM public.profiles 
       WHERE id = auth.uid() AND role = 'admin'

@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/ui/Navbar';
 import Toast, { useToast } from '@/components/ui/Toast';
-import { Users, Car, HeartHandshake, ShieldCheck, ShieldAlert, FileText, Check, X, Link as LinkIcon, ExternalLink, Calendar, Clock, Bookmark, ArrowRight, TrendingUp, MapPin, BarChart3, Activity, Pencil, Save } from 'lucide-react';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { 
+  Users, Car, HeartHandshake, ShieldCheck, ShieldAlert, FileText, 
+  Check, X, Link as LinkIcon, ExternalLink, Calendar, Clock, Bookmark, 
+  ArrowRight, TrendingUp, MapPin, BarChart3, Activity, Pencil, Save, 
+  UserPlus, Trash2, Download, Search, RefreshCw, AlertTriangle, 
+  CheckCircle2, Phone, Shield, Eye
+} from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -26,15 +33,50 @@ export default function AdminDashboard() {
   // Tab control
   const [activeTab, setActiveTab] = useState<'queues' | 'analytics' | 'users'>('queues');
 
-  // User management edit state
+  const [currentAdminId, setCurrentAdminId] = useState<string>('');
+
+  // User management state
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editRole, setEditRole] = useState('');
-  const [editStatus, setEditStatus] = useState('');
+  const [editRole, setEditRole] = useState('rider');
+  const [editStatus, setEditStatus] = useState('email_verified');
+  const [editVehicleMake, setEditVehicleMake] = useState('');
+  const [editVehicleModel, setEditVehicleModel] = useState('');
+  const [editVehicleColor, setEditVehicleColor] = useState('');
+  const [editVehiclePlate, setEditVehiclePlate] = useState('');
+  const [editUsualRoute, setEditUsualRoute] = useState('');
+  const [editDriverFare, setEditDriverFare] = useState('');
+  const [editTimeWindow, setEditTimeWindow] = useState('');
+  const [editEmergencyContact, setEditEmergencyContact] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+
+  // Add user state
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [addUserSaving, setAddUserSaving] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    full_name: '',
+    phone: '',
+    role: 'rider',
+    verification_status: 'email_verified',
+    vehicle_make: '',
+    vehicle_model: '',
+    vehicle_color: '',
+    vehicle_plate: '',
+    usual_route: 'Lugbe Plaza -> Federal Secretariat',
+    driver_fare: '1000',
+    available_time_window: '06:30 AM - 08:30 AM',
+    emergency_contact: ''
+  });
+
+  // Delete modal state
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState<any | null>(null);
+  const [deleteSaving, setDeleteSaving] = useState(false);
+
+  // Search & Filter state
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'rider' | 'driver' | 'admin'>('all');
+  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'verified' | 'pending_review' | 'email_verified' | 'rejected'>('all');
 
   // Date range filter state
   const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'all'>('all');
@@ -46,6 +88,8 @@ export default function AdminDashboard() {
         router.push('/login');
         return;
       }
+
+      setCurrentAdminId(user.id);
 
       // Check if user is actually admin
       const { data: profile } = await supabase
@@ -60,10 +104,10 @@ export default function AdminDashboard() {
       }
 
       // Fetch all data
-      const { data: allProfiles } = await supabase.from('profiles').select('*');
-      const { data: allBookings } = await supabase.from('bookings').select('*');
-      const { data: allIncidents } = await supabase.from('incidents').select('*');
-      const { data: allPostings } = await supabase.from('ride_postings').select('*');
+      const { data: allProfiles } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      const { data: allBookings } = await supabase.from('bookings').select('*').order('created_at', { ascending: false });
+      const { data: allIncidents } = await supabase.from('incidents').select('*').order('created_at', { ascending: false });
+      const { data: allPostings } = await supabase.from('ride_postings').select('*').order('created_at', { ascending: false });
 
       setProfiles(allProfiles || []);
       setBookings(allBookings || []);
@@ -98,6 +142,7 @@ export default function AdminDashboard() {
       if (error) {
         showToast('Verification update failed: ' + error.message, 'error');
       } else {
+        showToast(`User verification updated to ${status.toUpperCase()}`, 'success');
         fetchAdminData();
       }
     } catch (err: any) {
@@ -105,33 +150,84 @@ export default function AdminDashboard() {
     }
   };
 
-  // Match pairing is now automated directly in client matching transactions
+  // Quick Role Toggle
+  const handleQuickRoleChange = async (userId: string, newRole: string) => {
+    if (userId === currentAdminId && newRole !== 'admin') {
+      showToast('Cannot demote your own active administrator account.', 'error');
+      return;
+    }
 
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+      if (error) {
+        showToast('Failed to update role: ' + error.message, 'error');
+      } else {
+        showToast(`Role updated to ${newRole.toUpperCase()}`, 'success');
+        fetchAdminData();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Role change failed', 'error');
+    }
+  };
+
+  // Open Edit User Modal
   const openEditUser = (user: any) => {
     setEditingUser(user);
     setEditName(user.full_name || '');
     setEditPhone(user.phone || '');
     setEditRole(user.role || 'rider');
     setEditStatus(user.verification_status || 'email_verified');
+    setEditVehicleMake(user.vehicle_make || '');
+    setEditVehicleModel(user.vehicle_model || '');
+    setEditVehicleColor(user.vehicle_color || '');
+    setEditVehiclePlate(user.vehicle_plate || '');
+    setEditUsualRoute(user.usual_route || '');
+    setEditDriverFare(user.driver_fare ? String(user.driver_fare) : '');
+    setEditTimeWindow(user.available_time_window || '');
+    setEditEmergencyContact(user.emergency_contact || '');
   };
 
+  // Save Edit User
   const handleSaveUser = async () => {
     if (!editingUser) return;
+    if (editingUser.id === currentAdminId && editRole !== 'admin') {
+      showToast('Cannot remove your own admin privileges.', 'error');
+      return;
+    }
+
     setEditSaving(true);
     try {
+      const payload: any = {
+        full_name: editName.trim(),
+        phone: editPhone.trim(),
+        role: editRole,
+        verification_status: editStatus,
+        emergency_contact: editEmergencyContact.trim() || null,
+      };
+
+      if (editRole === 'driver') {
+        payload.vehicle_make = editVehicleMake.trim() || null;
+        payload.vehicle_model = editVehicleModel.trim() || null;
+        payload.vehicle_color = editVehicleColor.trim() || null;
+        payload.vehicle_plate = editVehiclePlate.trim().toUpperCase() || null;
+        payload.usual_route = editUsualRoute.trim() || null;
+        payload.driver_fare = editDriverFare ? Number(editDriverFare) : null;
+        payload.available_time_window = editTimeWindow.trim() || null;
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          full_name: editName.trim(),
-          phone: editPhone.trim(),
-          role: editRole,
-          verification_status: editStatus,
-        })
+        .update(payload)
         .eq('id', editingUser.id);
 
       if (error) {
         showToast('Failed to save: ' + error.message, 'error');
       } else {
+        showToast('User profile updated successfully!', 'success');
         setEditingUser(null);
         fetchAdminData();
       }
@@ -140,6 +236,141 @@ export default function AdminDashboard() {
     } finally {
       setEditSaving(false);
     }
+  };
+
+  // Create / Add New User
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserForm.full_name.trim()) {
+      showToast('Please enter full name', 'error');
+      return;
+    }
+
+    setAddUserSaving(true);
+    try {
+      const newUserId = crypto.randomUUID();
+      const payload: any = {
+        id: newUserId,
+        full_name: newUserForm.full_name.trim(),
+        phone: newUserForm.phone.trim() || null,
+        role: newUserForm.role,
+        verification_status: newUserForm.verification_status,
+        emergency_contact: newUserForm.emergency_contact.trim() || null,
+      };
+
+      if (newUserForm.role === 'driver') {
+        payload.vehicle_make = newUserForm.vehicle_make.trim() || 'Toyota';
+        payload.vehicle_model = newUserForm.vehicle_model.trim() || 'Corolla';
+        payload.vehicle_color = newUserForm.vehicle_color.trim() || 'Silver';
+        payload.vehicle_plate = newUserForm.vehicle_plate.trim().toUpperCase() || 'ABC-123-XY';
+        payload.usual_route = newUserForm.usual_route.trim() || 'Lugbe Plaza -> Federal Secretariat';
+        payload.driver_fare = newUserForm.driver_fare ? Number(newUserForm.driver_fare) : 1000;
+        payload.available_time_window = newUserForm.available_time_window.trim() || '06:30 AM - 08:30 AM';
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .insert(payload);
+
+      if (error) {
+        showToast('Failed to create user: ' + error.message, 'error');
+      } else {
+        showToast(`User "${newUserForm.full_name}" created successfully!`, 'success');
+        setIsAddUserOpen(false);
+        setNewUserForm({
+          full_name: '',
+          phone: '',
+          role: 'rider',
+          verification_status: 'email_verified',
+          vehicle_make: '',
+          vehicle_model: '',
+          vehicle_color: '',
+          vehicle_plate: '',
+          usual_route: 'Lugbe Plaza -> Federal Secretariat',
+          driver_fare: '1000',
+          available_time_window: '06:30 AM - 08:30 AM',
+          emergency_contact: ''
+        });
+        fetchAdminData();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Creation failed', 'error');
+    } finally {
+      setAddUserSaving(false);
+    }
+  };
+
+  // Delete User
+  const executeDeleteUser = async () => {
+    if (!deleteConfirmUser) return;
+    if (deleteConfirmUser.id === currentAdminId) {
+      showToast('Cannot delete your own active administrator account.', 'error');
+      setDeleteConfirmUser(null);
+      return;
+    }
+
+    setDeleteSaving(true);
+    try {
+      // 1. Delete user bookings, postings, and templates
+      await supabase.from('bookings').delete().or(`rider_id.eq.${deleteConfirmUser.id},driver_id.eq.${deleteConfirmUser.id}`);
+      await supabase.from('ride_postings').delete().eq('driver_id', deleteConfirmUser.id);
+      await supabase.from('recurring_templates').delete().eq('driver_id', deleteConfirmUser.id);
+      await supabase.from('incidents').delete().or(`reporter_id.eq.${deleteConfirmUser.id},reported_id.eq.${deleteConfirmUser.id}`);
+
+      // 2. Delete from public.profiles
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', deleteConfirmUser.id);
+
+      if (error) {
+        showToast('Delete failed: ' + error.message, 'error');
+      } else {
+        showToast(`User "${deleteConfirmUser.full_name || 'Account'}" deleted permanently.`, 'success');
+        if (editingUser?.id === deleteConfirmUser.id) {
+          setEditingUser(null);
+        }
+        setDeleteConfirmUser(null);
+        fetchAdminData();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error deleting user', 'error');
+    } finally {
+      setDeleteSaving(false);
+    }
+  };
+
+  // Export Users to CSV
+  const exportUsersCSV = () => {
+    if (profiles.length === 0) {
+      showToast('No users available to export', 'error');
+      return;
+    }
+
+    const headers = ['ID', 'Full Name', 'Phone', 'Role', 'Verification Status', 'Vehicle Plate', 'Vehicle Info', 'Route', 'Fare (NGN)', 'Joined Date'];
+    const rows = profiles.map(p => [
+      `"${p.id}"`,
+      `"${p.full_name || ''}"`,
+      `"${p.phone || ''}"`,
+      `"${p.role || ''}"`,
+      `"${p.verification_status || ''}"`,
+      `"${p.vehicle_plate || ''}"`,
+      `"${[p.vehicle_color, p.vehicle_make, p.vehicle_model].filter(Boolean).join(' ')}"`,
+      `"${p.usual_route || ''}"`,
+      `"${p.driver_fare || ''}"`,
+      `"${p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : ''}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `gazie-users-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('Exported users spreadsheet successfully!', 'success');
   };
 
   if (loading) {
@@ -580,135 +811,514 @@ export default function AdminDashboard() {
         {activeTab === 'users' && (() => {
           const filteredUsers = profiles
             .filter(p => userRoleFilter === 'all' || p.role === userRoleFilter)
+            .filter(p => userStatusFilter === 'all' || p.verification_status === userStatusFilter)
             .filter(p => {
               if (!userSearchQuery) return true;
               const q = userSearchQuery.toLowerCase();
               return (
                 (p.full_name || '').toLowerCase().includes(q) ||
                 (p.phone || '').toLowerCase().includes(q) ||
-                (p.role || '').toLowerCase().includes(q)
+                (p.role || '').toLowerCase().includes(q) ||
+                (p.vehicle_plate || '').toLowerCase().includes(q) ||
+                (p.usual_route || '').toLowerCase().includes(q)
               );
             });
 
+          const totalVerifiedUsers = profiles.filter(p => p.verification_status === 'verified').length;
+          const totalDriverUsers = profiles.filter(p => p.role === 'driver').length;
+          const totalRiderUsers = profiles.filter(p => p.role === 'rider').length;
+          const totalAdminUsers = profiles.filter(p => p.role === 'admin').length;
+
           const statusBadge = (status: string) => {
             switch (status) {
-              case 'verified': return 'bg-green-100 text-green-800 border-green-200';
-              case 'pending_review': return 'bg-blue-100 text-blue-800 border-blue-200';
-              case 'email_verified': return 'bg-amber-100 text-amber-800 border-amber-200';
-              case 'rejected': return 'bg-red-100 text-red-700 border-red-200';
+              case 'verified': return 'bg-green-100 text-green-800 border-green-300';
+              case 'pending_review': return 'bg-blue-100 text-blue-800 border-blue-300 animate-pulse';
+              case 'email_verified': return 'bg-amber-100 text-amber-800 border-amber-300';
+              case 'rejected': return 'bg-red-100 text-red-700 border-red-300';
               default: return 'bg-gray-100 text-gray-600 border-gray-200';
             }
           };
 
           const roleBadge = (role: string) => {
             if (role === 'driver') return 'bg-gazie-navy text-white';
-            if (role === 'admin') return 'bg-gazie-yellow text-gazie-navy';
-            return 'bg-gazie-paper text-gazie-navy border border-gazie-navy/20';
+            if (role === 'admin') return 'bg-gazie-yellow text-gazie-navy font-bold';
+            return 'bg-gazie-paper text-gazie-navy border border-gazie-navy/30';
           };
 
           return (
-            <div className="space-y-4 animate-fadeIn">
-              {/* Header + Filters */}
-              <section className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-4">
-                <div className="flex justify-between items-center border-b border-dashed border-gazie-navy/10 pb-3">
+            <div className="space-y-6 animate-fadeIn">
+              
+              {/* 1. Quick Stats Overview */}
+              <section className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <div className="bg-white border-2 border-gazie-navy rounded-xl p-3 text-center shadow-sm">
+                  <Users className="w-4 h-4 text-gazie-navy opacity-70 mx-auto mb-1" />
+                  <span className="font-mono text-lg font-extrabold text-gazie-navy">{profiles.length}</span>
+                  <span className="text-[9px] font-bold text-gazie-navy/60 uppercase block">Total Users</span>
+                </div>
+                <div className="bg-white border-2 border-gazie-navy rounded-xl p-3 text-center shadow-sm">
+                  <ShieldCheck className="w-4 h-4 text-gazie-green mx-auto mb-1" />
+                  <span className="font-mono text-lg font-extrabold text-gazie-green">{totalVerifiedUsers}</span>
+                  <span className="text-[9px] font-bold text-gazie-navy/60 uppercase block">Verified (KYC)</span>
+                </div>
+                <div className="bg-white border-2 border-gazie-navy rounded-xl p-3 text-center shadow-sm">
+                  <Car className="w-4 h-4 text-gazie-navy mx-auto mb-1" />
+                  <span className="font-mono text-lg font-extrabold text-gazie-navy">{totalDriverUsers}</span>
+                  <span className="text-[9px] font-bold text-gazie-navy/60 uppercase block">Drivers</span>
+                </div>
+                <div className="bg-white border-2 border-gazie-navy rounded-xl p-3 text-center shadow-sm">
+                  <HeartHandshake className="w-4 h-4 text-gazie-navy mx-auto mb-1" />
+                  <span className="font-mono text-lg font-extrabold text-gazie-navy">{totalRiderUsers}</span>
+                  <span className="text-[9px] font-bold text-gazie-navy/60 uppercase block">Riders</span>
+                </div>
+                <div className="bg-white border-2 border-gazie-navy rounded-xl p-3 text-center shadow-sm col-span-2 sm:col-span-1">
+                  <Shield className="w-4 h-4 text-amber-600 mx-auto mb-1" />
+                  <span className="font-mono text-lg font-extrabold text-amber-800">{totalAdminUsers}</span>
+                  <span className="text-[9px] font-bold text-gazie-navy/60 uppercase block">Admins</span>
+                </div>
+              </section>
+
+              {/* 2. Control Bar (Search, Multi-Filter, Add User, Export) */}
+              <section className="bg-white border-2 border-gazie-navy rounded-2xl p-4 shadow-sm space-y-3">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div>
                     <h2 className="font-display font-extrabold text-lg tracking-tight flex items-center gap-2">
-                      <Users className="w-5 h-5" /> User Management
+                      <Users className="w-5 h-5 text-gazie-navy" /> Administrative User Directory
                     </h2>
-                    <p className="text-[10px] text-gazie-navy/50 mt-0.5">{filteredUsers.length} of {profiles.length} users shown</p>
+                    <p className="text-[11px] text-gazie-navy/60">
+                      Showing {filteredUsers.length} of {profiles.length} registered commuter profiles.
+                    </p>
                   </div>
-                  <span className="font-mono text-xs bg-gazie-navy text-gazie-paper px-2 py-0.5 rounded font-bold">{profiles.length} Total</span>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={() => setIsAddUserOpen(true)}
+                      className="flex-1 sm:flex-none bg-[#2D6A4F] text-white font-bold text-xs px-3.5 py-2 rounded-xl hover:bg-emerald-900 transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <UserPlus className="w-4 h-4" /> Add User
+                    </button>
+
+                    <button
+                      onClick={exportUsersCSV}
+                      className="bg-white border-2 border-gazie-navy text-gazie-navy font-bold text-xs px-3 py-2 rounded-xl hover:bg-gazie-paper transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      title="Export directory as CSV"
+                    >
+                      <Download className="w-4 h-4" /> Export
+                    </button>
+                  </div>
                 </div>
 
-                {/* Search + Role Filter */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="text"
-                    placeholder="Search by name or phone..."
-                    value={userSearchQuery}
-                    onChange={e => setUserSearchQuery(e.target.value)}
-                    className="flex-1 px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none focus:border-gazie-yellow"
-                  />
-                  <div className="flex gap-1 bg-gazie-paper border border-gazie-navy/20 p-0.5 rounded-lg">
-                    {(['all', 'rider', 'driver', 'admin'] as const).map(r => (
-                      <button
-                        key={r}
-                        onClick={() => setUserRoleFilter(r)}
-                        className={`px-2.5 py-1 text-[9px] font-bold rounded-md uppercase tracking-wider transition cursor-pointer ${
-                          userRoleFilter === r
-                            ? 'bg-gazie-navy text-white shadow-sm'
-                            : 'text-gazie-navy/60 hover:text-gazie-navy'
-                        }`}
-                      >
-                        {r === 'all' ? 'All' : r}
-                      </button>
-                    ))}
+                {/* Filters Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-2 border-t border-dashed border-gazie-navy/10">
+                  {/* Search Input */}
+                  <div className="sm:col-span-6 relative">
+                    <Search className="w-4 h-4 text-gazie-navy/40 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search name, phone, plate, route..."
+                      value={userSearchQuery}
+                      onChange={e => setUserSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none focus:border-gazie-yellow"
+                    />
+                  </div>
+
+                  {/* Role Filter */}
+                  <div className="sm:col-span-3">
+                    <select
+                      value={userRoleFilter}
+                      onChange={e => setUserRoleFilter(e.target.value as any)}
+                      className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
+                    >
+                      <option value="all">All Roles</option>
+                      <option value="rider">Riders</option>
+                      <option value="driver">Drivers</option>
+                      <option value="admin">Administrators</option>
+                    </select>
+                  </div>
+
+                  {/* Verification Status Filter */}
+                  <div className="sm:col-span-3">
+                    <select
+                      value={userStatusFilter}
+                      onChange={e => setUserStatusFilter(e.target.value as any)}
+                      className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="verified">Verified (KYC)</option>
+                      <option value="pending_review">Pending Review</option>
+                      <option value="email_verified">Email Verified</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
                   </div>
                 </div>
               </section>
 
-              {/* User Table */}
+              {/* 3. Interactive User Table */}
               <section className="bg-white border-2 border-gazie-navy rounded-2xl shadow-sm overflow-hidden">
                 {filteredUsers.length === 0 ? (
-                  <p className="text-xs text-gazie-navy/60 italic text-center py-8">No users match the current filter.</p>
+                  <div className="p-8 text-center space-y-2">
+                    <Users className="w-8 h-8 text-gazie-navy/30 mx-auto" />
+                    <p className="text-xs text-gazie-navy/60 font-semibold">No users found matching your search or filters.</p>
+                  </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="bg-gazie-navy text-gazie-paper">
-                          <th className="text-left px-4 py-2.5 font-bold uppercase tracking-wider text-[10px]">Name</th>
-                          <th className="text-left px-4 py-2.5 font-bold uppercase tracking-wider text-[10px]">Phone</th>
-                          <th className="text-left px-4 py-2.5 font-bold uppercase tracking-wider text-[10px]">Role</th>
-                          <th className="text-left px-4 py-2.5 font-bold uppercase tracking-wider text-[10px]">Status</th>
-                          <th className="text-left px-4 py-2.5 font-bold uppercase tracking-wider text-[10px]">Joined</th>
-                          <th className="px-4 py-2.5"></th>
+                          <th className="text-left px-4 py-3 font-bold uppercase tracking-wider text-[10px]">User & Contact</th>
+                          <th className="text-left px-4 py-3 font-bold uppercase tracking-wider text-[10px]">Role</th>
+                          <th className="text-left px-4 py-3 font-bold uppercase tracking-wider text-[10px]">Verification</th>
+                          <th className="text-left px-4 py-3 font-bold uppercase tracking-wider text-[10px]">Route / Vehicle</th>
+                          <th className="text-left px-4 py-3 font-bold uppercase tracking-wider text-[10px]">Joined</th>
+                          <th className="px-4 py-3 text-right font-bold uppercase tracking-wider text-[10px]">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gazie-navy/5">
-                        {filteredUsers.map((user) => (
-                          <tr key={user.id} className="hover:bg-gazie-paper/40 transition-colors">
-                            <td className="px-4 py-3 font-semibold max-w-[140px]">
-                              <span className="truncate block">{user.full_name || '—'}</span>
-                            </td>
-                            <td className="px-4 py-3 font-mono">{user.phone || '—'}</td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${roleBadge(user.role)}`}>
-                                {user.role}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-0.5 rounded border text-[9px] font-bold uppercase ${statusBadge(user.verification_status)}`}>
-                                {(user.verification_status || '').replace('_', ' ')}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 font-mono text-gazie-navy/50">
-                              {user.created_at ? new Date(user.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) : '—'}
-                            </td>
-                            <td className="px-4 py-3">
-                              <button
-                                onClick={() => openEditUser(user)}
-                                className="flex items-center gap-1 text-[10px] font-bold text-gazie-navy bg-gazie-paper border border-gazie-navy/30 px-2.5 py-1 rounded-lg hover:bg-gazie-navy hover:text-white transition cursor-pointer"
-                              >
-                                <Pencil className="w-3 h-3" /> Edit
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                      <tbody className="divide-y divide-gazie-navy/10">
+                        {filteredUsers.map((user) => {
+                          const isCurrentAdmin = user.id === currentAdminId;
+                          const initials = (user.full_name || 'U')
+                            .split(' ')
+                            .map((n: string) => n[0])
+                            .slice(0, 2)
+                            .join('')
+                            .toUpperCase();
+
+                          return (
+                            <tr key={user.id} className="hover:bg-gazie-paper/30 transition-colors">
+                              {/* User Info */}
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-full bg-gazie-navy text-gazie-paper flex items-center justify-center font-black text-[11px] shrink-0 border border-gazie-yellow">
+                                    {initials}
+                                  </div>
+                                  <div className="min-w-0 max-w-[160px]">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-bold text-gazie-navy truncate block">
+                                        {user.full_name || 'Anonymous User'}
+                                      </span>
+                                      {isCurrentAdmin && (
+                                        <span className="text-[8px] bg-amber-100 text-amber-800 font-bold px-1 rounded">YOU</span>
+                                      )}
+                                    </div>
+                                    <div className="text-[11px] font-mono text-gazie-navy/70 flex items-center gap-1">
+                                      <Phone className="w-3 h-3 inline text-gazie-navy/40" />
+                                      {user.phone ? (
+                                        <a href={`tel:${user.phone}`} className="hover:underline">{user.phone}</a>
+                                      ) : (
+                                        <span className="italic text-gazie-navy/40">No phone</span>
+                                      )}
+                                    </div>
+                                    {user.emergency_contact && (
+                                      <div className="text-[9px] text-gazie-navy/50 truncate">
+                                        🚨 ICE: {user.emergency_contact}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Role Selector (1-Click Switch) */}
+                              <td className="px-4 py-3">
+                                <select
+                                  value={user.role}
+                                  onChange={e => handleQuickRoleChange(user.id, e.target.value)}
+                                  disabled={isCurrentAdmin}
+                                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase cursor-pointer border focus:outline-none transition ${roleBadge(user.role)} ${
+                                    isCurrentAdmin ? 'opacity-80 cursor-not-allowed' : 'hover:opacity-90'
+                                  }`}
+                                  title={isCurrentAdmin ? 'Your active role' : 'Change user role'}
+                                >
+                                  <option value="rider">Rider</option>
+                                  <option value="driver">Driver</option>
+                                  <option value="admin">Admin</option>
+                                </select>
+                              </td>
+
+                              {/* Verification Status */}
+                              <td className="px-4 py-3">
+                                <div className="space-y-1">
+                                  <span className={`inline-block px-2 py-0.5 rounded border text-[9px] font-bold uppercase ${statusBadge(user.verification_status)}`}>
+                                    {(user.verification_status || '').replace('_', ' ')}
+                                  </span>
+
+                                  {/* Quick Verification Actions */}
+                                  {user.verification_status === 'pending_review' && (
+                                    <div className="flex items-center gap-1 pt-0.5">
+                                      <button
+                                        onClick={() => handleUpdateVerification(user.id, 'verified')}
+                                        className="bg-[#2D6A4F] text-white p-1 rounded hover:bg-emerald-950 transition cursor-pointer"
+                                        title="1-Click Approve"
+                                      >
+                                        <Check className="w-3 h-3" />
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          const reason = prompt('Rejection reason:', 'Uploaded ID or utility bill is blurred/illegible.');
+                                          if (reason !== null) {
+                                            handleUpdateVerification(user.id, 'rejected', reason);
+                                          }
+                                        }}
+                                        className="bg-red-700 text-white p-1 rounded hover:bg-red-900 transition cursor-pointer"
+                                        title="1-Click Reject"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Route / Vehicle */}
+                              <td className="px-4 py-3 max-w-[180px]">
+                                {user.role === 'driver' ? (
+                                  <div className="space-y-0.5 text-[10px]">
+                                    <span className="font-mono font-bold bg-gazie-navy text-gazie-paper px-1.5 py-0.5 rounded text-[9px] inline-block">
+                                      {user.vehicle_plate || 'NO PLATE'}
+                                    </span>
+                                    <p className="text-gazie-navy/80 truncate">
+                                      {[user.vehicle_color, user.vehicle_make, user.vehicle_model].filter(Boolean).join(' ') || 'Vehicle info pending'}
+                                    </p>
+                                    {user.usual_route && (
+                                      <p className="text-gazie-navy/60 truncate font-semibold">📍 {user.usual_route}</p>
+                                    )}
+                                    {user.driver_fare && (
+                                      <p className="font-mono font-bold text-gazie-green">₦{user.driver_fare}/seat</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-gazie-navy/40 italic">Passenger</span>
+                                )}
+                              </td>
+
+                              {/* Joined Date */}
+                              <td className="px-4 py-3 font-mono text-[10px] text-gazie-navy/60">
+                                {user.created_at ? new Date(user.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) : '—'}
+                              </td>
+
+                              {/* Action Buttons */}
+                              <td className="px-4 py-3 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => openEditUser(user)}
+                                    className="p-1.5 rounded-lg border border-gazie-navy/30 bg-gazie-paper hover:bg-gazie-navy hover:text-white transition cursor-pointer"
+                                    title="Edit User Profile"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {!isCurrentAdmin && (
+                                    <button
+                                      onClick={() => setDeleteConfirmUser(user)}
+                                      className="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-600 hover:text-white transition cursor-pointer"
+                                      title="Delete User"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
                 )}
               </section>
 
-              {/* Inline Edit Modal */}
-              {editingUser && (
-                <div className="fixed inset-0 bg-gazie-navy/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-                  <div className="bg-white border-2 border-gazie-navy w-full max-w-sm rounded-2xl shadow-xl overflow-hidden animate-fadeIn">
-                    {/* Modal header */}
-                    <div className="bg-gazie-navy text-gazie-paper p-4 flex justify-between items-center">
+              {/* 4. ADD USER MODAL */}
+              {isAddUserOpen && (
+                <div className="fixed inset-0 bg-gazie-navy/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+                  <div className="bg-white border-2 border-gazie-navy w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-fadeIn max-h-[90vh] flex flex-col">
+                    {/* Modal Header */}
+                    <div className="bg-gazie-navy text-gazie-paper p-4 flex justify-between items-center shrink-0">
                       <span className="font-display font-black text-sm uppercase tracking-wider flex items-center gap-2">
-                        <Pencil className="w-4 h-4 text-gazie-yellow" /> Edit User
+                        <UserPlus className="w-4 h-4 text-gazie-yellow" /> Create New Commuter
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddUserOpen(false)}
+                        className="p-1 rounded-lg hover:bg-white/10 transition cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Modal Form Body */}
+                    <form onSubmit={handleAddUser} className="p-5 space-y-4 overflow-y-auto flex-1 text-left">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Full Name *</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Zara Everest"
+                            value={newUserForm.full_name}
+                            onChange={e => setNewUserForm({ ...newUserForm, full_name: e.target.value })}
+                            className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none focus:border-gazie-yellow"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Phone Number</label>
+                          <input
+                            type="tel"
+                            placeholder="08012345678"
+                            value={newUserForm.phone}
+                            onChange={e => setNewUserForm({ ...newUserForm, phone: e.target.value })}
+                            className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-gazie-yellow"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Role</label>
+                          <select
+                            value={newUserForm.role}
+                            onChange={e => setNewUserForm({ ...newUserForm, role: e.target.value })}
+                            className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
+                          >
+                            <option value="rider">Rider (Passenger)</option>
+                            <option value="driver">Driver (Car Owner)</option>
+                            <option value="admin">Administrator</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Initial Status</label>
+                          <select
+                            value={newUserForm.verification_status}
+                            onChange={e => setNewUserForm({ ...newUserForm, verification_status: e.target.value })}
+                            className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
+                          >
+                            <option value="verified">Verified (Full Access)</option>
+                            <option value="email_verified">Email Verified (Tier 1)</option>
+                            <option value="pending_review">Pending Review</option>
+                            <option value="rejected">Rejected</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Emergency Contact (Next of Kin)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Sister: 08099887766"
+                          value={newUserForm.emergency_contact}
+                          onChange={e => setNewUserForm({ ...newUserForm, emergency_contact: e.target.value })}
+                          className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none focus:border-gazie-yellow"
+                        />
+                      </div>
+
+                      {/* Driver Specific Fields */}
+                      {newUserForm.role === 'driver' && (
+                        <div className="p-3 bg-gazie-paper/40 border border-gazie-navy/20 rounded-xl space-y-3">
+                          <span className="text-[10px] font-bold uppercase text-gazie-navy block tracking-wider">
+                            🚗 Driver & Vehicle Details
+                          </span>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Make</label>
+                              <input
+                                type="text"
+                                placeholder="Toyota"
+                                value={newUserForm.vehicle_make}
+                                onChange={e => setNewUserForm({ ...newUserForm, vehicle_make: e.target.value })}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Model</label>
+                              <input
+                                type="text"
+                                placeholder="Corolla"
+                                value={newUserForm.vehicle_model}
+                                onChange={e => setNewUserForm({ ...newUserForm, vehicle_model: e.target.value })}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Color</label>
+                              <input
+                                type="text"
+                                placeholder="Silver"
+                                value={newUserForm.vehicle_color}
+                                onChange={e => setNewUserForm({ ...newUserForm, vehicle_color: e.target.value })}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Plate No.</label>
+                              <input
+                                type="text"
+                                placeholder="ABC-123-XY"
+                                value={newUserForm.vehicle_plate}
+                                onChange={e => setNewUserForm({ ...newUserForm, vehicle_plate: e.target.value })}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs font-mono uppercase font-bold"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Usual Route</label>
+                              <input
+                                type="text"
+                                placeholder="Lugbe Plaza -> Secretariat"
+                                value={newUserForm.usual_route}
+                                onChange={e => setNewUserForm({ ...newUserForm, usual_route: e.target.value })}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Seat Fare (₦)</label>
+                              <input
+                                type="number"
+                                placeholder="1000"
+                                value={newUserForm.driver_fare}
+                                onChange={e => setNewUserForm({ ...newUserForm, driver_fare: e.target.value })}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs font-mono font-bold"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pt-2 flex justify-end gap-2 border-t border-dashed border-gazie-navy/10">
+                        <button
+                          type="button"
+                          onClick={() => setIsAddUserOpen(false)}
+                          className="px-4 py-2 bg-gray-100 text-gazie-navy font-bold rounded-xl text-xs hover:bg-gray-200 transition cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={addUserSaving}
+                          className="px-5 py-2 bg-[#2D6A4F] text-white font-bold rounded-xl text-xs hover:bg-emerald-900 transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
+                        >
+                          <Save className="w-3.5 h-3.5" />
+                          {addUserSaving ? 'Creating...' : 'Create Profile'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. COMPREHENSIVE EDIT USER MODAL */}
+              {editingUser && (
+                <div className="fixed inset-0 bg-gazie-navy/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+                  <div className="bg-white border-2 border-gazie-navy w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-fadeIn max-h-[90vh] flex flex-col">
+                    {/* Modal Header */}
+                    <div className="bg-gazie-navy text-gazie-paper p-4 flex justify-between items-center shrink-0">
+                      <div>
+                        <span className="font-display font-black text-sm uppercase tracking-wider flex items-center gap-2">
+                          <Pencil className="w-4 h-4 text-gazie-yellow" /> Manage User: {editingUser.full_name || 'Profile'}
+                        </span>
+                        <span className="text-[10px] text-gazie-paper/60 font-mono block">ID: {editingUser.id}</span>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setEditingUser(null)}
@@ -718,28 +1328,28 @@ export default function AdminDashboard() {
                       </button>
                     </div>
 
-                    {/* Modal body */}
-                    <div className="p-5 space-y-4">
-                      <div className="text-[10px] text-gazie-navy/60 font-mono truncate">ID: {editingUser.id}</div>
+                    {/* Modal Body */}
+                    <div className="p-5 space-y-4 overflow-y-auto flex-1 text-left">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Full Name</label>
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={e => setEditName(e.target.value)}
+                            className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none focus:border-gazie-yellow"
+                          />
+                        </div>
 
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Full Name</label>
-                        <input
-                          type="text"
-                          value={editName}
-                          onChange={e => setEditName(e.target.value)}
-                          className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none focus:border-gazie-yellow"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Phone Number</label>
-                        <input
-                          type="text"
-                          value={editPhone}
-                          onChange={e => setEditPhone(e.target.value)}
-                          className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-gazie-yellow"
-                        />
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Phone Number</label>
+                          <input
+                            type="text"
+                            value={editPhone}
+                            onChange={e => setEditPhone(e.target.value)}
+                            className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-gazie-yellow"
+                          />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
@@ -748,45 +1358,198 @@ export default function AdminDashboard() {
                           <select
                             value={editRole}
                             onChange={e => setEditRole(e.target.value)}
+                            disabled={editingUser.id === currentAdminId}
                             className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
                           >
                             <option value="rider">Rider</option>
                             <option value="driver">Driver</option>
-                            <option value="admin">Admin</option>
+                            <option value="admin">Administrator</option>
                           </select>
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Verification</label>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Verification Status</label>
                           <select
                             value={editStatus}
                             onChange={e => setEditStatus(e.target.value)}
                             className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
                           >
-                            <option value="pending_email">Pending Email</option>
+                            <option value="verified">Verified</option>
                             <option value="email_verified">Email Verified</option>
                             <option value="pending_review">Pending Review</option>
                             <option value="rejected">Rejected</option>
-                            <option value="verified">Verified</option>
                           </select>
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={handleSaveUser}
-                        disabled={editSaving}
-                        className="w-full bg-gazie-navy text-gazie-paper font-bold py-2.5 rounded-xl hover:bg-gazie-yellow hover:text-gazie-navy transition-all text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                      >
-                        <Save className="w-3.5 h-3.5" />
-                        {editSaving ? 'Saving...' : 'Save Changes'}
-                      </button>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Emergency Contact (Next of Kin)</label>
+                        <input
+                          type="text"
+                          value={editEmergencyContact}
+                          onChange={e => setEditEmergencyContact(e.target.value)}
+                          className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none focus:border-gazie-yellow"
+                        />
+                      </div>
+
+                      {/* Driver Attributes */}
+                      {editRole === 'driver' && (
+                        <div className="p-3.5 bg-gazie-paper/40 border border-gazie-navy/20 rounded-xl space-y-3">
+                          <span className="text-[10px] font-bold uppercase text-gazie-navy block tracking-wider">
+                            🚗 Vehicle & Route Configuration
+                          </span>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Make</label>
+                              <input
+                                type="text"
+                                value={editVehicleMake}
+                                onChange={e => setEditVehicleMake(e.target.value)}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Model</label>
+                              <input
+                                type="text"
+                                value={editVehicleModel}
+                                onChange={e => setEditVehicleModel(e.target.value)}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Color</label>
+                              <input
+                                type="text"
+                                value={editVehicleColor}
+                                onChange={e => setEditVehicleColor(e.target.value)}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Plate No.</label>
+                              <input
+                                type="text"
+                                value={editVehiclePlate}
+                                onChange={e => setEditVehiclePlate(e.target.value)}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs font-mono uppercase font-bold"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div className="sm:col-span-2 space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Usual Route</label>
+                              <input
+                                type="text"
+                                value={editUsualRoute}
+                                onChange={e => setEditUsualRoute(e.target.value)}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-bold uppercase text-gazie-navy/60">Seat Fare (₦)</label>
+                              <input
+                                type="number"
+                                value={editDriverFare}
+                                onChange={e => setEditDriverFare(e.target.value)}
+                                className="w-full px-2 py-1.5 bg-white border border-gazie-navy rounded-lg text-xs font-mono font-bold"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Uploaded Documents Quick Access */}
+                      {(editingUser.id_url || editingUser.proof_of_address_url || editingUser.license_url || editingUser.insurance_url) && (
+                        <div className="p-3 bg-gazie-paper/20 border border-gazie-navy/10 rounded-xl space-y-2">
+                          <span className="text-[10px] font-bold uppercase text-gazie-navy/70 block">
+                            📁 Uploaded KYC Documents
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {editingUser.id_url && (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewFileUrl(editingUser.id_url)}
+                                className="bg-white border border-gazie-navy px-2.5 py-1 rounded-lg text-[10px] font-bold text-gazie-navy hover:bg-gazie-navy hover:text-white transition flex items-center gap-1 cursor-pointer"
+                              >
+                                <Eye className="w-3 h-3" /> View National ID
+                              </button>
+                            )}
+                            {editingUser.proof_of_address_url && (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewFileUrl(editingUser.proof_of_address_url)}
+                                className="bg-white border border-gazie-navy px-2.5 py-1 rounded-lg text-[10px] font-bold text-gazie-navy hover:bg-gazie-navy hover:text-white transition flex items-center gap-1 cursor-pointer"
+                              >
+                                <Eye className="w-3 h-3" /> View Address Proof
+                              </button>
+                            )}
+                            {editingUser.license_url && (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewFileUrl(editingUser.license_url)}
+                                className="bg-white border border-gazie-navy px-2.5 py-1 rounded-lg text-[10px] font-bold text-gazie-navy hover:bg-gazie-navy hover:text-white transition flex items-center gap-1 cursor-pointer"
+                              >
+                                <Eye className="w-3 h-3" /> View Driver License
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Modal Action Buttons */}
+                      <div className="pt-3 border-t border-dashed border-gazie-navy/10 flex items-center justify-between">
+                        {editingUser.id !== currentAdminId ? (
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmUser(editingUser)}
+                            className="text-red-700 bg-red-50 hover:bg-red-600 hover:text-white border border-red-200 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete User
+                          </button>
+                        ) : <div />}
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditingUser(null)}
+                            className="px-4 py-2 bg-gray-100 text-gazie-navy font-bold rounded-xl text-xs hover:bg-gray-200 transition cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveUser}
+                            disabled={editSaving}
+                            className="px-5 py-2 bg-gazie-navy text-gazie-paper font-bold rounded-xl text-xs hover:bg-gazie-yellow hover:text-gazie-navy transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-sm"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                            {editSaving ? 'Saving...' : 'Save Changes'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
+
+              {/* 6. DELETE CONFIRMATION MODAL */}
+              <ConfirmDialog
+                isOpen={!!deleteConfirmUser}
+                title="Delete User Account"
+                message={`Are you sure you want to permanently delete "${deleteConfirmUser?.full_name || 'this user'}"? All their associated bookings, trip postings, and verification documents will be removed permanently.`}
+                confirmLabel={deleteSaving ? "Deleting..." : "Permanently Delete"}
+                cancelLabel="Cancel"
+                isDangerous={true}
+                onConfirm={executeDeleteUser}
+                onCancel={() => setDeleteConfirmUser(null)}
+              />
+
             </div>
           );
+        })()}
         })()}
 
         {/* ACTIVE TAB: ANALYTICS (New Analytics Section) */}
