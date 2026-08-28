@@ -164,7 +164,7 @@ function LoginFormContent() {
     setLoading(true);
 
     if (!agreedToPrivacy) {
-      setError('You must agree to the Privacy Policy & Terms of Use to proceed.');
+      setError('You must agree to the Privacy Policy and Terms of Service to proceed.');
       setLoading(false);
       return;
     }
@@ -655,7 +655,7 @@ function LoginFormContent() {
                   </div>
                 </div>
 
-                {/* Privacy Agreement Checkbox */}
+                {/* Privacy & Terms Agreement Checkbox */}
                 <div className="flex items-start gap-2 pt-2 pb-1 text-left">
                   <input
                     type="checkbox"
@@ -666,7 +666,14 @@ function LoginFormContent() {
                     required
                   />
                   <label htmlFor="agreePrivacy" className="text-[11px] text-gazie-navy/80 font-medium select-none cursor-pointer leading-tight">
-                    I agree to the <Link href="/privacy" target="_blank" className="underline font-bold text-gazie-navy hover:text-gazie-green transition">Privacy Policy & Terms of Use</Link>
+                    I agree to the{' '}
+                    <Link href="/privacy" target="_blank" className="underline font-bold text-gazie-navy hover:text-gazie-green transition">
+                      Privacy Policy
+                    </Link>{' '}
+                    and{' '}
+                    <Link href="/terms" target="_blank" className="underline font-bold text-gazie-navy hover:text-gazie-green transition">
+                      Terms of Service
+                    </Link>
                   </label>
                 </div>
 
