@@ -272,8 +272,8 @@ function LoginFormContent() {
 
   const handleVerifyOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!otpCode || otpCode.trim().length < 6) {
-      setError('Please enter the 6-digit verification code sent to your email.');
+    if (!otpCode || otpCode.trim().length < 4) {
+      setError('Please enter the verification code sent to your email.');
       return;
     }
 
@@ -398,10 +398,10 @@ function LoginFormContent() {
             <div className="space-y-1.5">
               <h3 className="font-display font-black text-xl tracking-tight uppercase">Verify Your Email</h3>
               <p className="text-xs text-gazie-navy/70 max-w-sm mx-auto leading-relaxed font-semibold">
-                We sent a 6-digit verification code and link to <span className="text-gazie-navy font-bold underline">{email}</span>.
+                We sent a verification code and confirmation link to <span className="text-gazie-navy font-bold underline">{email}</span>.
               </p>
               <p className="text-[11px] text-gazie-navy/60 max-w-xs mx-auto">
-                Enter the 6-digit code below to activate your account and start commuting.
+                Enter the verification code from your email below to activate your account and start commuting.
               </p>
             </div>
 
@@ -417,19 +417,19 @@ function LoginFormContent() {
               </div>
             )}
 
-            {/* 6-Digit OTP Form */}
+            {/* OTP Form (Supports 6 to 8 Digits) */}
             <form onSubmit={handleVerifyOtp} className="space-y-4 pt-2">
               <div className="space-y-1">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">
-                  6-Digit Verification Code
+                  Email Verification Code
                 </label>
                 <input
                   type="text"
-                  maxLength={8}
-                  placeholder="• • • • • •"
+                  maxLength={12}
+                  placeholder="Enter code"
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9a-zA-Z]/g, ''))}
-                  className="w-full text-center tracking-[0.4em] font-mono text-2xl font-black py-3 bg-gazie-paper/30 border-2 border-gazie-navy rounded-xl focus:outline-none focus:border-gazie-yellow text-gazie-navy placeholder:tracking-normal placeholder:font-sans placeholder:text-sm"
+                  className="w-full text-center tracking-[0.3em] font-mono text-2xl font-black py-3 bg-gazie-paper/30 border-2 border-gazie-navy rounded-xl focus:outline-none focus:border-gazie-yellow text-gazie-navy placeholder:tracking-normal placeholder:font-sans placeholder:text-sm uppercase"
                   autoFocus
                   required
                 />

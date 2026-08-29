@@ -95,22 +95,22 @@ export default function RiderDashboard() {
       return;
     }
 
-    const handler = (window as any).PaystackPop.setup({
+    const paystack = new (window as any).PaystackPop();
+    paystack.newTransaction({
       key: publicKey,
       email: riderEmail,
       amount: 5000, // ₦50 in kobo
       ref: bookingId,
       channels: ['card', 'bank_transfer', 'ussd'],
-      callback: function(response: any) {
+      onSuccess: function(response: any) {
         setPaymentProcessing(true);
         setPaymentBookingId(bookingId);
         pollBookingStatus(bookingId);
       },
-      onClose: function() {
+      onCancel: function() {
         showToast('Checkout cancelled.', 'info');
       }
     });
-    handler.openIframe();
   };
 
   const triggerMockCheckout = (bookingId: string, postingId: string) => {
@@ -1061,7 +1061,7 @@ export default function RiderDashboard() {
       </main>
 
       {/* Paystack Inline Script */}
-      <Script src="https://js.paystack.co/v1/inline.js" strategy="lazyOnload" />
+      <Script src="https://js.paystack.co/v2/inline.js" strategy="lazyOnload" />
 
       {/* Glassmorphic spinner while waiting for webhook updates */}
       {paymentProcessing && (
