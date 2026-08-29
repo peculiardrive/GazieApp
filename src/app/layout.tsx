@@ -22,6 +22,16 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: "Gazie Commute — Verified Daily Ride-Sharing & Commutes in Abuja",
   description: "Abuja's trusted verified commute-sharing platform. Connect with verified drivers and riders across major corridors (Airport Road, Kubwa, Gwarinpa, Apo, Lokogoma, Nyanya, CBD, Wuse, Secretariat).",
+  icons: {
+    icon: [
+      { url: '/brand/gazie-commute-icon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/brand/gazie-commute-icon.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/brand/gazie-commute-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/brand/gazie-commute-icon.png',
+  },
 };
 
 export const viewport: Viewport = {
