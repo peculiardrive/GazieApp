@@ -185,11 +185,16 @@ function LoginFormContent() {
 
     try {
       // 1. Sign Up User in Auth system
+      const redirectUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/dashboard` 
+        : 'https://gazie-commute.vercel.app/dashboard';
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         phone: phone.trim(),
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             full_name: fullName,
             phone: phone.trim(),
@@ -316,9 +321,16 @@ function LoginFormContent() {
     setLoading(true);
     setError(null);
     try {
+      const redirectUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/dashboard` 
+        : 'https://gazie-commute.vercel.app/dashboard';
+
       const { error: resendError } = await supabase.auth.resend({
         type: 'signup',
-        email: email.trim()
+        email: email.trim(),
+        options: {
+          emailRedirectTo: redirectUrl
+        }
       });
       if (resendError) throw resendError;
       setSuccess('A fresh 6-digit verification code has been sent to your email.');
