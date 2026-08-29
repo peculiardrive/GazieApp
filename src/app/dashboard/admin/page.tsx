@@ -1136,31 +1136,48 @@ export default function AdminDashboard() {
                                 </select>
                               </td>
 
-                              {/* Verification Status */}
-                              <td className="px-4 py-3">
+                              {/* Verification Status & NIN Identity */}
+                              <td className="px-4 py-3 min-w-[140px]">
                                 <div className="space-y-1">
                                   <span className={`inline-block px-2 py-0.5 rounded border text-[9px] font-bold uppercase ${statusBadge(user.verification_status)}`}>
                                     {(user.verification_status || '').replace('_', ' ')}
                                   </span>
+
+                                  {/* Text-Based Identity Records */}
+                                  {user.id_url && !user.id_url.startsWith('http') && (
+                                    <div className="font-mono text-[9px] font-bold bg-gazie-paper border border-gazie-navy/20 px-1.5 py-0.5 rounded text-gazie-navy">
+                                      🆔 NIN: {user.id_url}
+                                    </div>
+                                  )}
+                                  {user.license_url && !user.license_url.startsWith('http') && (
+                                    <div className="font-mono text-[9px] font-bold bg-amber-50 border border-amber-300 text-amber-900 px-1.5 py-0.5 rounded">
+                                      🚗 LIC: {user.license_url}
+                                    </div>
+                                  )}
+                                  {user.id_url && user.id_url.startsWith('http') && (
+                                    <a href={user.id_url} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold underline text-blue-700 block">
+                                      📄 View ID File
+                                    </a>
+                                  )}
 
                                   {/* Quick Verification Actions */}
                                   {user.verification_status === 'pending_review' && (
                                     <div className="flex items-center gap-1 pt-0.5">
                                       <button
                                         onClick={() => handleUpdateVerification(user.id, 'verified')}
-                                        className="bg-[#2D6A4F] text-white p-1 rounded hover:bg-emerald-950 transition cursor-pointer"
+                                        className="bg-[#2D6A4F] text-white px-2 py-0.5 rounded text-[9px] font-bold hover:bg-emerald-950 transition cursor-pointer flex items-center gap-0.5"
                                         title="1-Click Approve"
                                       >
-                                        <Check className="w-3 h-3" />
+                                        <Check className="w-3 h-3" /> Approve
                                       </button>
                                       <button
                                         onClick={() => {
-                                          const reason = prompt('Rejection reason:', 'Uploaded ID or utility bill is blurred/illegible.');
+                                          const reason = prompt('Rejection reason:', 'NIN does not match user name in NIMC records.');
                                           if (reason !== null) {
                                             handleUpdateVerification(user.id, 'rejected', reason);
                                           }
                                         }}
-                                        className="bg-red-700 text-white p-1 rounded hover:bg-red-900 transition cursor-pointer"
+                                        className="bg-red-700 text-white px-1.5 py-0.5 rounded text-[9px] font-bold hover:bg-red-900 transition cursor-pointer"
                                         title="1-Click Reject"
                                       >
                                         <X className="w-3 h-3" />
@@ -1169,8 +1186,6 @@ export default function AdminDashboard() {
                                   )}
                                 </div>
                               </td>
-
-                              {/* Route / Vehicle */}
                               <td className="px-4 py-3 max-w-[180px]">
                                 {user.role === 'driver' ? (
                                   <div className="space-y-0.5 text-[10px]">

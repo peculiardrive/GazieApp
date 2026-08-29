@@ -16,6 +16,8 @@ export default function ProfilePage() {
   // Edit states
   const [fullName, setFullName] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
+  const [ninNumber, setNinNumber] = useState('');
+  const [licenseNumber, setLicenseNumber] = useState('');
   const [vehicleMake, setVehicleMake] = useState('');
   const [vehicleModel, setVehicleModel] = useState('');
   const [vehicleColor, setVehicleColor] = useState('');
@@ -51,6 +53,8 @@ export default function ProfilePage() {
           setProfile(data);
           setFullName(data.full_name || '');
           setEmergencyContact(data.emergency_contact || '');
+          setNinNumber(data.id_url && !data.id_url.startsWith('http') ? data.id_url : '');
+          setLicenseNumber(data.license_url && !data.license_url.startsWith('http') ? data.license_url : '');
           setVehicleMake(data.vehicle_make || '');
           setVehicleModel(data.vehicle_model || '');
           setVehicleColor(data.vehicle_color || '');
@@ -77,16 +81,16 @@ export default function ProfilePage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      let currentIdUrl = profile.id_url;
-      let currentProofUrl = profile.proof_of_address_url;
-      let currentLicUrl = profile.license_url;
+      const cleanNin = ninNumber.replace(/[^0-9]/g, '');
+      let currentIdUrl = cleanNin || profile.id_url || '';
+      let currentProofUrl = profile.proof_of_address_url || '';
+      let currentLicUrl = licenseNumber.trim() || profile.license_url || '';
 
       // Check if we can submit for review
-      const hasNIN = !!(riderIdFile || currentIdUrl);
-      const hasProof = !!(addressFile || currentProofUrl);
-      const hasLicense = profile.role !== 'driver' || !!(driverLicenseFile || currentLicUrl);
+      const hasNIN = !!(cleanNin || riderIdFile || (currentIdUrl && currentIdUrl.length === 11));
+      const hasLicense = profile.role !== 'driver' || !!(licenseNumber.trim() || driverLicenseFile || currentLicUrl);
 
-      // Perform file uploads
+      // Perform optional file uploads
       if (riderIdFile) {
         setMessage({ text: 'Uploading National ID (NIN)...', isError: false });
         const { url, error: uploadErr } = await uploadDocument(riderIdFile, user.id, 'nin');
@@ -127,7 +131,7 @@ export default function ProfilePage() {
         updateData.driver_fare = parseFloat(driverFare);
       }
 
-      // If primary ID is uploaded, transition to pending_review (Option 1 Lightweight Pilot KYC)
+      // If primary ID / NIN is provided, transition to pending_review
       const canSubmitReview = profile.role === 'driver' ? (hasLicense || hasNIN) : hasNIN;
       
       // Only transition to pending_review if they are currently unverified (email_verified or rejected)
@@ -437,73 +441,68 @@ export default function ProfilePage() {
             {(profile?.verification_status === 'email_verified' || profile?.verification_status === 'rejected') && (
               <div className="space-y-4 pt-4 border-t border-dashed border-gazie-navy/10 text-left">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-gazie-navy/70 uppercase tracking-wider">Fast Pilot Verification</span>
+                  <span className="text-xs font-bold text-gazie-navy/70 uppercase tracking-wider">Fast NIN Verification</span>
                   <span className="font-mono text-[10px] bg-gazie-yellow text-gazie-navy px-2 py-0.5 rounded font-bold uppercase">
-                    {(() => {
-                      let hasPrimary = profile?.role === 'driver' 
-                        ? (driverLicenseFile || profile?.license_url || riderIdFile || profile?.id_url)
-                        : (riderIdFile || profile?.id_url);
-                      return hasPrimary ? '1 of 1 Document Ready ✓' : '0 of 1 Uploaded';
-                    })()}
+                    {ninNumber.length === 11 ? 'NIN Complete ✓' : 'NIN Required'}
                   </span>
                 </div>
 
+                <div className="p-3 bg-gazie-yellow/10 border border-gazie-yellow/30 rounded-xl text-xs text-gazie-navy/80 font-semibold">
+                  🛡️ <span className="font-bold">Zero file uploads needed!</span> Enter your 11-digit NIN below. Our team verifies it directly with NIMC.
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* National ID */}
-                  <div className="space-y-1.5">
+                  {/* 11-Digit NIN */}
+                  <div className="space-y-1">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">
-                      National ID (NIN Slip / Card) {profile?.role === 'rider' && '*'}
+                      11-Digit National ID Number (NIN) *
                     </label>
-                    <div className="border border-dashed border-gazie-navy/35 rounded-lg p-3 text-center relative hover:bg-gazie-paper/5 transition cursor-pointer">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={11}
+                      placeholder="e.g. 12345678901"
+                      value={ninNumber}
+                      onChange={(e) => setNinNumber(e.target.value.replace(/[^0-9]/g, ''))}
+                      className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-lg text-xs font-mono font-bold tracking-widest text-gazie-navy focus:outline-none focus:border-gazie-yellow placeholder:tracking-normal placeholder:font-sans"
+                      required={profile?.role !== 'driver' || !licenseNumber}
+                    />
+                    <span className="text-[10px] text-gazie-navy/50 font-mono block text-right">
+                      {ninNumber.length}/11 digits
+                    </span>
+                  </div>
+
+                  {/* Driver's Licence Number (Drivers Only) */}
+                  {profile?.role === 'driver' && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                        Driver's Licence Number
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. ABC12345678"
+                        value={licenseNumber}
+                        onChange={(e) => setLicenseNumber(e.target.value.toUpperCase())}
+                        className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-lg text-xs font-mono font-bold uppercase focus:outline-none focus:border-gazie-yellow"
+                      />
+                    </div>
+                  )}
+
+                  {/* Optional Upload Slip / ID */}
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/50 block">
+                      Attach NIN Slip or ID Photo <span className="text-[9px] font-normal italic lowercase">(optional)</span>
+                    </label>
+                    <div className="border border-dashed border-gazie-navy/20 rounded-lg p-2.5 text-center relative hover:bg-gazie-paper/5 transition cursor-pointer">
                       <input
                         type="file"
                         accept="image/*,application/pdf"
                         onChange={(e) => setRiderIdFile(e.target.files?.[0] || null)}
                         className="absolute inset-0 opacity-0 cursor-pointer"
                       />
-                      <Upload className="w-4 h-4 mx-auto text-gazie-navy/40 mb-1" />
-                      <span className="text-[10px] font-semibold block text-ellipsis overflow-hidden whitespace-nowrap">
-                        {riderIdFile ? riderIdFile.name : profile?.id_url ? 'NIN ID Card (Uploaded ✓)' : 'Choose NIN File'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Driver License (Drivers Only) */}
-                  {profile?.role === 'driver' && (
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">
-                        Driver's Licence *
-                      </label>
-                      <div className="border border-dashed border-gazie-navy/35 rounded-lg p-3 text-center relative hover:bg-gazie-paper/5 transition cursor-pointer">
-                        <input
-                          type="file"
-                          accept="image/*,application/pdf"
-                          onChange={(e) => setDriverLicenseFile(e.target.files?.[0] || null)}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                        />
-                        <Upload className="w-4 h-4 mx-auto text-gazie-navy/40 mb-1" />
-                        <span className="text-[10px] font-semibold block text-ellipsis overflow-hidden whitespace-nowrap">
-                          {driverLicenseFile ? driverLicenseFile.name : profile?.license_url ? 'Driver\'s Licence (Uploaded ✓)' : 'Choose Licence File'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Optional Proof of Address */}
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/50 block">
-                      Proof of Address (Utility Bill) <span className="text-[9px] font-normal italic lowercase">(optional)</span>
-                    </label>
-                    <div className="border border-dashed border-gazie-navy/20 rounded-lg p-2.5 text-center relative hover:bg-gazie-paper/5 transition cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        onChange={(e) => setAddressFile(e.target.files?.[0] || null)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
                       <Upload className="w-3.5 h-3.5 mx-auto text-gazie-navy/30 mb-0.5" />
                       <span className="text-[9px] font-semibold block text-ellipsis overflow-hidden whitespace-nowrap text-gazie-navy/60">
-                        {addressFile ? addressFile.name : profile?.proof_of_address_url ? 'Utility Bill (Uploaded ✓)' : 'Optional — Choose Utility Bill'}
+                        {riderIdFile ? riderIdFile.name : profile?.id_url?.startsWith('http') ? 'ID Photo (Uploaded ✓)' : 'Optional — Click to attach file'}
                       </span>
                     </div>
                   </div>
