@@ -32,6 +32,8 @@ function LoginFormContent() {
   const [phone, setPhone] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Step 2 values (Rider)
   const [emergencyContact, setEmergencyContact] = useState('');
@@ -246,10 +248,84 @@ function LoginFormContent() {
 
       setCreatedUserId(userId);
       setShowEmailVerificationScreen(true);
-      setSuccess('Account created! Please check your email to verify.');
+      setSuccess('Account created! A 6-digit verification code has been sent to your email.');
+      setResendCooldown(60);
 
     } catch (err: any) {
       setError(err.message || 'An error occurred during registration.');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let timer: any;
+    if (resendCooldown > 0) {
+      timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  const handleVerifyOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!otpCode || otpCode.trim().length < 6) {
+      setError('Please enter the 6-digit verification code sent to your email.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      // 1. Verify with Supabase Auth OTP API
+      const { data, error: otpError } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otpCode.trim(),
+        type: 'signup'
+      });
+
+      if (otpError) {
+        // Fallback check for standard email token type
+        const { error: retryError } = await supabase.auth.verifyOtp({
+          email: email.trim(),
+          token: otpCode.trim(),
+          type: 'email'
+        });
+        if (retryError) throw retryError;
+      }
+
+      // 2. Mark profile as email_verified
+      if (createdUserId) {
+        await supabase
+          .from('profiles')
+          .update({ verification_status: 'email_verified' })
+          .eq('id', createdUserId);
+      }
+
+      setSuccess('Email verified successfully! Redirecting to your dashboard...');
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1200);
+    } catch (err: any) {
+      setError(err.message || 'Invalid or expired verification code. Please check your email or request a new code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim()
+      });
+      if (resendError) throw resendError;
+      setSuccess('A fresh 6-digit verification code has been sent to your email.');
+      setResendCooldown(60);
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend code. Please wait a moment and try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -302,21 +378,78 @@ function LoginFormContent() {
       {/* Main card */}
       <div className="bg-white border-2 border-gazie-navy rounded-2xl shadow-md overflow-hidden">
         {showEmailVerificationScreen ? (
-          <div className="p-6 text-center space-y-6 animate-fadeIn">
-            <div className="w-16 h-16 bg-gazie-yellow/10 text-amber-800 rounded-full flex items-center justify-center mx-auto border-2 border-gazie-yellow/20">
-              <Mail className="w-8 h-8 animate-pulse" />
+          <div className="p-6 text-center space-y-5 animate-fadeIn">
+            <div className="w-14 h-14 bg-gazie-yellow/15 text-gazie-navy rounded-full flex items-center justify-center mx-auto border-2 border-gazie-navy/20">
+              <Mail className="w-7 h-7" />
             </div>
-            <div className="space-y-2">
-              <h3 className="font-display font-extrabold text-xl tracking-tight uppercase">Confirm Your Email</h3>
+
+            <div className="space-y-1.5">
+              <h3 className="font-display font-black text-xl tracking-tight uppercase">Verify Your Email</h3>
               <p className="text-xs text-gazie-navy/70 max-w-sm mx-auto leading-relaxed font-semibold">
-                We sent a verification link to <span className="text-gazie-navy font-bold underline">{email}</span>.
+                We sent a 6-digit verification code and link to <span className="text-gazie-navy font-bold underline">{email}</span>.
               </p>
-              <p className="text-xs text-gazie-navy/60 max-w-xs mx-auto">
-                Please click the link in the message to confirm your identity and unlock browsing.
+              <p className="text-[11px] text-gazie-navy/60 max-w-xs mx-auto">
+                Enter the 6-digit code below to activate your account and start commuting.
               </p>
             </div>
-            
-            <div className="space-y-3 pt-4 border-t border-dashed border-gazie-navy/15">
+
+            {/* Error / Success Feedback */}
+            {error && (
+              <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs font-semibold text-left">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="p-3 bg-green-50 text-gazie-green border border-gazie-green/20 rounded-xl text-xs font-semibold text-left">
+                {success}
+              </div>
+            )}
+
+            {/* 6-Digit OTP Form */}
+            <form onSubmit={handleVerifyOtp} className="space-y-4 pt-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                  6-Digit Verification Code
+                </label>
+                <input
+                  type="text"
+                  maxLength={8}
+                  placeholder="• • • • • •"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9a-zA-Z]/g, ''))}
+                  className="w-full text-center tracking-[0.4em] font-mono text-2xl font-black py-3 bg-gazie-paper/30 border-2 border-gazie-navy rounded-xl focus:outline-none focus:border-gazie-yellow text-gazie-navy placeholder:tracking-normal placeholder:font-sans placeholder:text-sm"
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !otpCode}
+                className="w-full bg-gazie-navy text-gazie-paper hover:bg-gazie-yellow hover:text-gazie-navy font-bold py-3 rounded-xl border-2 border-gazie-navy transition-all cursor-pointer flex items-center justify-center gap-2 text-xs uppercase tracking-wider font-display disabled:opacity-50"
+              >
+                {loading ? 'Verifying Code...' : 'Verify Code & Continue'} <ShieldCheck className="w-4 h-4" />
+              </button>
+            </form>
+
+            {/* Resend Code & Link Fallback */}
+            <div className="pt-3 border-t border-dashed border-gazie-navy/15 space-y-2 text-xs">
+              <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-gazie-navy/70">
+                <span>Didn&rsquo;t get the code?</span>
+                {resendCooldown > 0 ? (
+                  <span className="font-mono font-bold text-gazie-navy/50">Resend in {resendCooldown}s</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={loading}
+                    className="font-bold text-gazie-green hover:underline cursor-pointer"
+                  >
+                    Resend Code
+                  </button>
+                )}
+              </div>
+
               <button
                 type="button"
                 onClick={async () => {
@@ -333,47 +466,19 @@ function LoginFormContent() {
                       setSuccess('Email confirmed! Redirecting...');
                       setTimeout(() => {
                         router.push('/dashboard');
-                      }, 1500);
+                      }, 1000);
                     } else {
-                      setError('Email is still unverified. Please check your inbox or try the simulator button below.');
+                      setError('Email is still unverified. Please enter the 6-digit code from the email or click the link in your inbox.');
                     }
                   } catch (err: any) {
-                    setError('Error verifying status. Please try again.');
+                    setError('Error checking status. Please enter the code above.');
                   } finally {
                     setLoading(false);
                   }
                 }}
-                className="w-full bg-gazie-navy text-gazie-paper hover:bg-gazie-yellow hover:text-gazie-navy font-bold py-3 rounded-xl border-2 border-gazie-navy transition-all cursor-pointer flex items-center justify-center gap-2 text-xs"
+                className="text-[11px] text-gazie-navy/60 hover:text-gazie-navy font-semibold underline block mx-auto cursor-pointer"
               >
-                I have verified my email <ShieldCheck className="w-4.5 h-4.5" />
-              </button>
-
-              <button
-                type="button"
-                onClick={async () => {
-                  setLoading(true);
-                  setError(null);
-                  try {
-                    const { error } = await supabase
-                      .from('profiles')
-                      .update({ verification_status: 'email_verified' })
-                      .eq('id', createdUserId);
-
-                    if (error) throw error;
-                    
-                    setSuccess('Email verification simulated successfully! Redirecting...');
-                    setTimeout(() => {
-                      router.push('/dashboard');
-                    }, 1500);
-                  } catch (err: any) {
-                    setError(err.message || 'Simulation failed');
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                className="w-full bg-[#2D6A4F] text-white hover:opacity-90 font-bold py-2.5 rounded-xl border border-[#2D6A4F] transition-all cursor-pointer text-xs font-mono"
-              >
-                ⚡ Fast-Track: Simulate Email Verification
+                I clicked the link in my email &rarr; Check Status
               </button>
             </div>
             
@@ -384,8 +489,9 @@ function LoginFormContent() {
                 setIsSignUp(false);
                 setError(null);
                 setSuccess(null);
+                setOtpCode('');
               }}
-              className="text-xs font-bold text-gazie-navy/60 hover:text-gazie-navy flex items-center gap-1 mx-auto hover:underline cursor-pointer"
+              className="text-xs font-bold text-gazie-navy/60 hover:text-gazie-navy flex items-center gap-1 mx-auto hover:underline cursor-pointer pt-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
             </button>
