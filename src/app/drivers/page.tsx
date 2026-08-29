@@ -101,15 +101,13 @@ export default function DriversPage() {
                 Start Driver Registration
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <a
-                href="https://wa.me/2348164737221?text=Hello%20Gazie%20Commute%2C%20I%20want%20to%20onboard%20as%20a%20driver"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-gazie-navy bg-white px-5 py-3 text-sm font-extrabold text-gazie-navy shadow-sm transition hover:bg-gazie-green hover:text-white"
+              <Link
+                href="/login?role=rider"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-gazie-navy bg-white px-5 py-3 text-sm font-extrabold text-gazie-navy shadow-sm transition hover:bg-gazie-yellow hover:text-gazie-navy"
               >
-                <MessageCircle className="h-4 w-4" />
-                Chat on WhatsApp
-              </a>
+                <Users className="h-4 w-4" />
+                Rider Registration
+              </Link>
             </div>
 
             <div className="grid grid-cols-3 gap-3 border-t border-dashed border-gazie-navy/20 pt-5 text-center">
