@@ -82,7 +82,21 @@ function LoginFormContent() {
     });
 
     if (signInError) {
-      setError(signInError.message);
+      const errMsg = signInError.message;
+      if (/email.*not.*confirm/i.test(errMsg)) {
+        setError('Your email has not been verified yet. We have sent a verification code to your email.');
+        // Automatically trigger resend and switch to OTP verification screen
+        fetch('/api/auth/resend-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim() })
+        }).catch(() => {});
+        setShowEmailVerificationScreen(true);
+      } else if (/invalid.*credentials/i.test(errMsg)) {
+        setError('Incorrect email or password. Please check your credentials or click "Forgot password?" below.');
+      } else {
+        setError(formatAuthError(errMsg));
+      }
       setLoading(false);
       return;
     }
@@ -121,7 +135,7 @@ function LoginFormContent() {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      setError('Please enter your email address');
+      setError('Please enter your registered email address');
       return;
     }
     setLoading(true);
@@ -129,18 +143,21 @@ function LoginFormContent() {
     setSuccess(null);
 
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/reset-password`
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
       });
+      const data = await res.json();
 
-      if (resetError) {
-        setError(formatAuthError(resetError.message));
+      if (!res.ok || data.error) {
+        setError(data.error || 'Failed to send password reset email');
       } else {
-        setSuccess(`A password reset link has been sent to ${email.trim()}. Please check your email inbox (and spam folder).`);
+        setSuccess(data.message || `A password reset link has been dispatched to ${email.trim()}. Please check your email inbox and spam folder.`);
         setForgotSent(true);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to send password reset email');
+      setError(err.message || 'Failed to send password reset email. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -187,7 +204,7 @@ function LoginFormContent() {
       // 1. Sign Up User in Auth system
       const redirectUrl = typeof window !== 'undefined' 
         ? `${window.location.origin}/dashboard` 
-        : 'https://gazie-commute.vercel.app/dashboard';
+        : 'https://gaziecommute.com/dashboard';
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.trim(),
@@ -215,6 +232,13 @@ function LoginFormContent() {
         setLoading(false);
         return;
       }
+
+      // Also trigger guaranteed delivery via Resend API in background
+      fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
+      }).catch(err => console.warn('Resend verification background trigger:', err));
 
       setSuccess('Saving your commuter profile...');
       const updateData: any = {
@@ -253,7 +277,7 @@ function LoginFormContent() {
 
       setCreatedUserId(userId);
       setShowEmailVerificationScreen(true);
-      setSuccess('Account created! A 6-digit verification code has been sent to your email.');
+      setSuccess('Account created! A verification code has been dispatched to your email.');
       setResendCooldown(60);
 
     } catch (err: any) {
@@ -321,19 +345,26 @@ function LoginFormContent() {
     setLoading(true);
     setError(null);
     try {
-      const redirectUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/dashboard` 
-        : 'https://gazie-commute.vercel.app/dashboard';
-
-      const { error: resendError } = await supabase.auth.resend({
-        type: 'signup',
-        email: email.trim(),
-        options: {
-          emailRedirectTo: redirectUrl
-        }
+      const res = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
       });
-      if (resendError) throw resendError;
-      setSuccess('A fresh 6-digit verification code has been sent to your email.');
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        // Fallback to supabase direct resend
+        const { error: resendError } = await supabase.auth.resend({
+          type: 'signup',
+          email: email.trim(),
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`
+          }
+        });
+        if (resendError) throw resendError;
+      }
+
+      setSuccess('A fresh verification code has been dispatched to your email.');
       setResendCooldown(60);
     } catch (err: any) {
       setError(err.message || 'Failed to resend code. Please wait a moment and try again.');
@@ -341,6 +372,7 @@ function LoginFormContent() {
       setLoading(false);
     }
   };
+
 
   const handleTestAutoFill = (phoneNum: string) => {
     setEmail(`${phoneNum}@gazie.com`);
@@ -600,6 +632,17 @@ function LoginFormContent() {
                 {loading ? 'Sending link...' : 'Send Reset Link'} <ArrowRight className="w-4 h-4" />
               </button>
 
+              {forgotSent && (
+                <div className="pt-2 text-center">
+                  <Link
+                    href={`/auth/reset-password?email=${encodeURIComponent(email)}`}
+                    className="inline-flex items-center justify-center gap-1.5 w-full bg-gazie-yellow text-gazie-navy font-bold py-2.5 px-4 rounded-xl border border-gazie-navy text-xs hover:bg-gazie-yellow/80 transition"
+                  >
+                    Have your 6-digit code? Set New Password &rarr;
+                  </Link>
+                </div>
+              )}
+
               <div className="pt-2 text-center">
                 <button
                   type="button"
@@ -607,6 +650,7 @@ function LoginFormContent() {
                     setIsForgotPassword(false);
                     setError(null);
                     setSuccess(null);
+                    setForgotSent(false);
                   }}
                   className="text-xs font-bold text-gazie-navy/70 hover:text-gazie-navy hover:underline cursor-pointer"
                 >

@@ -154,7 +154,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 max-w-lg mx-auto w-full">
         {/* Danfo Yellow Badge */}
         <div className="bg-gazie-yellow border-2 border-gazie-navy text-gazie-navy font-bold font-mono text-xs px-3 py-1.5 rounded-full mb-6 uppercase tracking-wider animate-bounce shadow-md">
-          {process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true' ? 'Abuja & Environs Network' : 'Abuja Commuter Network — 100% Free'}
+          Abuja & Environs Network
         </div>
 
         {/* Hero Section */}
@@ -187,7 +187,7 @@ export default function Home() {
               {process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true' ? 'Gazie Commute Abuja' : 'Launch Promotional Period'}
             </h2>
             <p className="text-xs text-gazie-navy/60 font-semibold uppercase tracking-wider">
-              {process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true' ? '₦50 Platform Match Unlock Fee' : 'Zero Platform Fees for Riders & Drivers'}
+              {process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true' ? '₦50 Platform Match Unlock Fee' : 'No App Commission on Ride Fares'}
             </p>
           </div>
 

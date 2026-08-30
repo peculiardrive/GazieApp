@@ -76,14 +76,17 @@ function AdminLoginForm() {
     setSuccess(null);
 
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/reset-password`
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
       });
+      const data = await res.json();
 
-      if (resetError) {
-        setError(resetError.message);
+      if (!res.ok || data.error) {
+        setError(data.error || 'Failed to send password reset email');
       } else {
-        setSuccess(`A password reset link has been sent to ${email.trim()}. Please check your email.`);
+        setSuccess(data.message || `A password reset link has been sent to ${email.trim()}. Please check your email inbox and spam folder.`);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to send password reset email');
