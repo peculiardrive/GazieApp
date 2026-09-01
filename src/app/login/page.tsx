@@ -54,6 +54,9 @@ function LoginFormContent() {
     if (/rate.*exceed|email.*rate|too many/i.test(message)) {
       return 'Gazie email verification is temporarily busy. Please try again later, or message us on WhatsApp at 08164737221 so we can help complete your onboarding.';
     }
+    if (/error sending confirmation email/i.test(message)) {
+      return 'Could not send the confirmation email via Supabase Auth. Please check your Supabase SMTP settings or Resend API key, or contact support on WhatsApp (+234 816 473 7221).';
+    }
     return message;
   };
 
@@ -201,6 +204,34 @@ function LoginFormContent() {
     }
 
     try {
+      if (!isMock) {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim(),
+            phone: phone.trim(),
+            fullName: fullName.trim(),
+            password,
+            role
+          })
+        });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          setError(formatAuthError(data.error || 'Unable to create your account right now.'));
+          setLoading(false);
+          return;
+        }
+
+        setCreatedUserId(data.userId || null);
+        setShowEmailVerificationScreen(true);
+        setSuccess(data.message || 'Account created! A verification code has been dispatched to your email.');
+        setResendCooldown(60);
+        setLoading(false);
+        return;
+      }
+
       // 1. Sign Up User in Auth system
       const redirectUrl = typeof window !== 'undefined' 
         ? `${window.location.origin}/dashboard` 
@@ -279,6 +310,7 @@ function LoginFormContent() {
       setShowEmailVerificationScreen(true);
       setSuccess('Account created! A verification code has been dispatched to your email.');
       setResendCooldown(60);
+      setLoading(false);
 
     } catch (err: any) {
       setError(err.message || 'An error occurred during registration.');
@@ -353,21 +385,13 @@ function LoginFormContent() {
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        // Fallback to supabase direct resend
-        const { error: resendError } = await supabase.auth.resend({
-          type: 'signup',
-          email: email.trim(),
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`
-          }
-        });
-        if (resendError) throw resendError;
+        throw new Error(data.error || 'Failed to dispatch verification code. Please try again.');
       }
 
       setSuccess('A fresh verification code has been dispatched to your email.');
       setResendCooldown(60);
     } catch (err: any) {
-      setError(err.message || 'Failed to resend code. Please wait a moment and try again.');
+      setError(formatAuthError(err.message || 'Failed to resend code. Please wait a moment and try again.'));
     } finally {
       setLoading(false);
     }
