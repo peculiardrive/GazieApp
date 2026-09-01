@@ -61,8 +61,8 @@ export async function POST(request: Request) {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('SUPABASE configuration is incomplete');
-      return NextResponse.json({ error: 'Server authentication misconfigured' }, { status: 500 });
+      console.error('Supabase server configuration is incomplete');
+      return NextResponse.json({ error: 'Server authentication misconfigured: Missing Supabase URL or service role key' }, { status: 500 });
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
@@ -74,6 +74,51 @@ export async function POST(request: Request) {
 
     const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://gaziecommute.com';
     const redirectTo = `${origin}/dashboard`;
+    const verificationRequired = process.env.NEXT_PUBLIC_VERIFICATION_REQUIRED !== 'false';
+
+    if (!verificationRequired) {
+      const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: cleanEmail,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: cleanName,
+          phone: cleanPhone,
+          role
+        }
+      });
+
+      if (createError || !createData?.user) {
+        console.error('Pilot signup user creation failed:', createError?.message || 'Missing created user');
+        const alreadyRegistered = /already|registered|exists/i.test(createError?.message || '');
+        return NextResponse.json(
+          { error: alreadyRegistered ? 'This email address is already registered. Please sign in or reset your password.' : 'Unable to create your account right now. Please try again.' },
+          { status: alreadyRegistered ? 409 : 500 }
+        );
+      }
+
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .upsert({
+          id: createData.user.id,
+          phone: cleanPhone,
+          full_name: cleanName,
+          role,
+          verification_status: 'email_verified'
+        }, { onConflict: 'id' });
+
+      if (profileError) {
+        console.error('Profile upsert failed after pilot signup:', profileError.message);
+        return NextResponse.json({ error: 'Account created, but profile setup failed. Please contact support.' }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        verificationRequired: false,
+        userId: createData.user.id,
+        message: 'Account created. You can enter your dashboard while admin verification remains pending.'
+      });
+    }
 
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'signup',

@@ -34,6 +34,7 @@ function LoginFormContent() {
   const [password, setPassword] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const verificationRequired = process.env.NEXT_PUBLIC_VERIFICATION_REQUIRED !== 'false';
 
   // Step 2 values (Rider)
   const [emergencyContact, setEmergencyContact] = useState('');
@@ -56,6 +57,9 @@ function LoginFormContent() {
     }
     if (/error sending confirmation email/i.test(message)) {
       return 'Could not send the confirmation email via Supabase Auth. Please check your Supabase SMTP settings or Resend API key, or contact support on WhatsApp (+234 816 473 7221).';
+    }
+    if (/server authentication misconfigured/i.test(message)) {
+      return 'Server authentication key is missing in your Vercel project environment variables (SUPABASE_SERVICE_ROLE_KEY). Please add it to your Vercel Dashboard and redeploy.';
     }
     return message;
   };
@@ -120,7 +124,7 @@ function LoginFormContent() {
           return;
         }
 
-        if (profile.verification_status === 'pending_email') {
+        if (verificationRequired && profile.verification_status === 'pending_email') {
           setCreatedUserId(data.session.user.id);
           setShowEmailVerificationScreen(true);
           setLoading(false);
@@ -224,6 +228,24 @@ function LoginFormContent() {
           return;
         }
 
+        if (data.verificationRequired === false) {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password
+          });
+
+          if (signInError || !signInData.session) {
+            setSuccess('Account created. Please sign in to continue to your dashboard.');
+            setIsSignUp(false);
+            setLoading(false);
+            return;
+          }
+
+          setSuccess('Account created. Redirecting to your dashboard...');
+          router.push('/dashboard');
+          return;
+        }
+
         setCreatedUserId(data.userId || null);
         setShowEmailVerificationScreen(true);
         setSuccess(data.message || 'Account created! A verification code has been dispatched to your email.');
@@ -276,7 +298,7 @@ function LoginFormContent() {
         full_name: fullName,
         phone: phone.trim(),
         role: role,
-        verification_status: 'pending_email'
+        verification_status: verificationRequired ? 'pending_email' : 'email_verified'
       };
 
       // Support environments with and without automated database triggers
@@ -307,9 +329,14 @@ function LoginFormContent() {
       }
 
       setCreatedUserId(userId);
-      setShowEmailVerificationScreen(true);
-      setSuccess('Account created! A verification code has been dispatched to your email.');
-      setResendCooldown(60);
+      if (verificationRequired) {
+        setShowEmailVerificationScreen(true);
+        setSuccess('Account created! A verification code has been dispatched to your email.');
+        setResendCooldown(60);
+      } else {
+        setSuccess('Account created. Redirecting to your dashboard...');
+        router.push('/dashboard');
+      }
       setLoading(false);
 
     } catch (err: any) {

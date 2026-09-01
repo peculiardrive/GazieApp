@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 export default function DashboardRedirect() {
   const router = useRouter();
   const [statusText, setStatusText] = useState('Verifying your session...');
+  const verificationRequired = process.env.NEXT_PUBLIC_VERIFICATION_REQUIRED !== 'false';
 
   useEffect(() => {
     async function checkRoleAndRedirect() {
@@ -38,7 +39,7 @@ export default function DashboardRedirect() {
         // Check if user confirmed their email via magic link or signup confirmation
         const isEmailConfirmed = !!(session.user.email_confirmed_at || (session.user as any).confirmed_at || session.user.user_metadata?.email_verified);
 
-        if (profile.verification_status === 'pending_email') {
+        if (verificationRequired && profile.verification_status === 'pending_email') {
           if (isEmailConfirmed) {
             // Automatically upgrade status to email_verified
             await supabase
@@ -72,7 +73,7 @@ export default function DashboardRedirect() {
     }
 
     checkRoleAndRedirect();
-  }, [router]);
+  }, [router, verificationRequired]);
 
   return (
     <div className="flex min-h-screen bg-gazie-paper items-center justify-center text-gazie-navy">
