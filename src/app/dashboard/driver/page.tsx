@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase, syncRecurringPostings } from '@/lib/supabase';
 import Navbar from '@/components/ui/Navbar';
 import Ticket from '@/components/ui/Ticket';
@@ -588,97 +589,45 @@ export default function DriverDashboard() {
 
         {activeTab === 'matches' && (
           <>
-            {/* 1. Vehicle info display */}
-            <section className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-3">
+            {/* 1. Vehicle & Route Profile Summary */}
+            <section className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-4">
               <div className="border-b border-dashed border-gazie-navy/10 pb-2 flex items-center justify-between">
                 <h2 className="font-display font-extrabold text-sm uppercase tracking-wider text-gazie-navy/70 flex items-center gap-1.5">
-                  <Car className="w-4 h-4 text-gazie-navy" /> Vehicle Details
+                  <Car className="w-4 h-4 text-gazie-navy" /> Driver Profile & Vehicle
                 </h2>
-                <span className="font-mono text-[9px] bg-gazie-navy text-gazie-paper px-2 py-0.5 rounded font-bold uppercase">
-                  {profile?.vehicle_plate}
-                </span>
+                <Link
+                  href="/profile"
+                  className="text-[11px] font-bold text-gazie-navy hover:text-gazie-green underline flex items-center gap-1 cursor-pointer"
+                >
+                  Edit in Profile <ArrowRight className="w-3 h-3" />
+                </Link>
               </div>
+
               <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
                 <div>
-                  <span className="opacity-60 block text-[10px]">VEHICLE MAKE</span>
-                  <span className="text-sm font-bold text-gazie-navy">{profile?.vehicle_make || 'TBD'}</span>
+                  <span className="opacity-60 block text-[10px]">VEHICLE</span>
+                  <span className="text-sm font-bold text-gazie-navy block">
+                    {profile?.vehicle_make && profile?.vehicle_model 
+                      ? `${profile.vehicle_make} ${profile.vehicle_model}`
+                      : 'Not configured'}
+                  </span>
+                  <span className="font-mono text-[10px] text-gazie-navy/60 block mt-0.5">
+                    Plate: {profile?.vehicle_plate || 'None'}
+                  </span>
                 </div>
                 <div>
-                  <span className="opacity-60 block text-[10px]">VEHICLE MODEL</span>
-                  <span className="text-sm font-bold text-gazie-navy">{profile?.vehicle_model || 'TBD'}</span>
+                  <span className="opacity-60 block text-[10px]">DEFAULT ROUTE & FARE</span>
+                  <span className="text-sm font-bold text-gazie-navy block truncate" title={profile?.usual_route || 'Not set'}>
+                    {profile?.usual_route || 'Not set'}
+                  </span>
+                  <span className="font-mono text-[10px] text-[#2D6A4F] font-bold block mt-0.5">
+                    ₦{profile?.driver_fare || 0}/seat • {profile?.available_time_window || 'Morning'}
+                  </span>
                 </div>
               </div>
             </section>
 
-            {/* 2. Route & Availability form */}
-            <section className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-4">
-              <div className="border-b border-dashed border-gazie-navy/10 pb-3 flex justify-between items-center">
-                <h2 className="font-display font-extrabold text-lg tracking-tight">Availability & Pricing</h2>
-                <span className="font-mono text-[10px] bg-gazie-yellow text-gazie-navy px-2 py-0.5 rounded font-bold uppercase">
-                  Direct Paid
-                </span>
-              </div>
-
-              <form onSubmit={handleUpdateAvailability} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">My Daily Route</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gazie-navy/40" />
-                    <input
-                      type="text"
-                      placeholder="e.g. Lugbe - Berger (or Secretariat, Garki)"
-                      value={usualRoute}
-                      onChange={(e) => setUsualRoute(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Departure Window (AM)</label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gazie-navy/40" />
-                      <input
-                        type="text"
-                        placeholder="e.g. 07:00 AM - 08:30 AM"
-                        value={availableTimeWindow}
-                        onChange={(e) => setAvailableTimeWindow(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">My Fare Per Seat (₦)</label>
-                    <div className="relative">
-                      <Landmark className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gazie-navy/40" />
-                      <input
-                        type="number"
-                        placeholder="e.g. 1000"
-                        value={driverFare}
-                        onChange={(e) => setDriverFare(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-mono font-bold focus:outline-none focus:border-gazie-yellow"
-                        min="0"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={updateLoading}
-                  className="w-full bg-gazie-navy text-gazie-paper font-bold py-2.5 rounded-xl border border-gazie-navy hover:bg-gazie-yellow hover:text-gazie-navy transition-all duration-200 text-xs shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  {updateLoading ? 'Updating settings...' : 'Update Availability Settings'}
-                </button>
-              </form>
-            </section>
-
-            {/* 3. My Passenger Tickets */}
+            {/* 2. My Passenger Tickets */}
             <section className="space-y-3">
               <h2 className="font-display font-extrabold text-lg tracking-tight">My Scheduled Commutes</h2>
               {bookings.length === 0 ? (
