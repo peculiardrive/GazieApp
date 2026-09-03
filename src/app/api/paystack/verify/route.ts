@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     }
 
     const transaction = verifyData.data;
-    const amountPaid = (transaction.amount || 5000) / 100;
+    const amountPaid = (transaction.amount || 10000) / 100;
     const targetBookingId = bookingId || transaction.metadata?.booking_id || reference.split('_')[1];
 
     if (!targetBookingId) {

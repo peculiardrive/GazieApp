@@ -98,13 +98,22 @@ export default function RiderDashboard() {
 
     // Generate unique timestamped reference to avoid Paystack duplicate reference rejection
     const uniqueRef = `gc_${bookingId}_${Date.now()}`;
-    const cleanEmail = riderEmail && riderEmail.includes('@') ? riderEmail.trim() : `rider_${Date.now()}@gaziecommute.com`;
+
+    // Guaranteed valid RFC 5322 email for Paystack
+    let cleanEmail = '';
+    if (riderEmail && riderEmail.includes('@') && !riderEmail.startsWith('@') && !riderEmail.includes('undefined')) {
+      cleanEmail = riderEmail.trim().toLowerCase().replace(/[^a-z0-9@._+-]/g, '');
+    }
+    if (!cleanEmail || !cleanEmail.includes('@') || cleanEmail.startsWith('@')) {
+      const fallbackId = (bookingId || Date.now().toString()).replace(/[^a-z0-9]/gi, '').slice(0, 8);
+      cleanEmail = `rider_${fallbackId}@gaziecommute.com`;
+    }
 
     const paystack = new (window as any).PaystackPop();
     paystack.newTransaction({
       key: publicKey,
       email: cleanEmail,
-      amount: 5000, // ₦50 in kobo
+      amount: 10000, // ₦100.00 in kobo (100 * 100)
       ref: uniqueRef,
       metadata: {
         booking_id: bookingId,
@@ -148,12 +157,16 @@ export default function RiderDashboard() {
       },
       onCancel: function() {
         showToast('Checkout cancelled.', 'info');
+      },
+      onError: function(error: any) {
+        console.error('Paystack transaction error:', error);
+        showToast('Payment gateway error: ' + (error?.message || 'Unable to initialize checkout. Please try again.'), 'error');
       }
     });
   };
 
   const triggerMockCheckout = (bookingId: string, postingId: string) => {
-    const paySuccessful = window.confirm("[MOCK PAYMENT] Simulating ₦50 platform unlock checkout.\n\nClick OK to simulate charge.success\nClick Cancel to simulate charge.failed");
+    const paySuccessful = window.confirm("[MOCK PAYMENT] Simulating ₦100 platform unlock checkout.\n\nClick OK to simulate charge.success\nClick Cancel to simulate charge.failed");
     
     if (paySuccessful) {
       const postingsKey = 'gazie_ride_postings';
@@ -194,7 +207,7 @@ export default function RiderDashboard() {
 
       // Confirm booking
       bookingsList[bookingIndex].status = 'confirmed';
-      bookingsList[bookingIndex].platform_fee = 50;
+      bookingsList[bookingIndex].platform_fee = 100;
       
       // Log payment in local storage mock payments
       const paymentsKey = 'gazie_payments';
@@ -203,7 +216,7 @@ export default function RiderDashboard() {
         id: crypto.randomUUID(),
         booking_id: bookingId,
         reference: bookingId,
-        amount: 50,
+        amount: 100,
         status: 'success',
         created_at: new Date().toISOString()
       });
@@ -513,20 +526,19 @@ export default function RiderDashboard() {
         return;
       }
 
-      // Disabled for pilot launch
-      const isFeeEnabled = false;
+      // Platform unlock fee toggle (₦100)
+      const isFeeEnabled = process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true';
 
       if (isFeeEnabled) {
         let bookingId = '';
 
         if (isMock) {
-          // Create a mock requested booking
+          bookingId = 'mock_booking_' + Date.now();
           const bookingsKey = 'gazie_bookings';
-          const bookingsList = JSON.parse(localStorage.getItem(bookingsKey) || '[]');
-          bookingId = crypto.randomUUID();
-          
+          let bookingsList = JSON.parse(localStorage.getItem(bookingsKey) || '[]');
           bookingsList.push({
             id: bookingId,
+            ride_posting_id: posting.id,
             rider_id: user.id,
             driver_id: posting.driver_id,
             role: 'rider',
@@ -536,7 +548,7 @@ export default function RiderDashboard() {
             requested_time: posting.departure_time,
             status: 'requested',
             driver_fare: posting.fare_per_seat,
-            platform_fee: 0,
+            platform_fee: 100,
             created_at: new Date().toISOString()
           });
           localStorage.setItem(bookingsKey, JSON.stringify(bookingsList));
@@ -544,7 +556,7 @@ export default function RiderDashboard() {
           fetchRiderData();
           triggerMockCheckout(bookingId, posting.id);
         } else {
-          // Insert a real requested booking
+          // Insert a real requested booking pending unlock payment
           const { data: newBooking, error: bookingErr } = await supabase
             .from('bookings')
             .insert({
@@ -557,7 +569,7 @@ export default function RiderDashboard() {
               requested_time: posting.departure_time,
               status: 'requested',
               driver_fare: posting.fare_per_seat,
-              platform_fee: 0
+              platform_fee: 100
             })
             .select('id')
             .single();
@@ -569,7 +581,8 @@ export default function RiderDashboard() {
 
           bookingId = newBooking.id;
           fetchRiderData();
-          triggerPaystackCheckout(bookingId, posting, user.email || `${user.phone}@gazie.com`);
+          const payerEmail = user.email || profile?.email || `${user.id.slice(0, 8)}@gaziecommute.com`;
+          triggerPaystackCheckout(bookingId, posting, payerEmail);
         }
       } else {
         // Free pilot flow: confirm immediately
@@ -1112,14 +1125,15 @@ export default function RiderDashboard() {
                               if (isMock) {
                                 triggerMockCheckout(booking.id, posting.id);
                               } else {
-                                triggerPaystackCheckout(booking.id, posting, profile?.phone + "@gazie.com");
+                                const payerEmail = profile?.email || `${booking.rider_id.slice(0, 8)}@gaziecommute.com`;
+                                triggerPaystackCheckout(booking.id, posting, payerEmail);
                               }
                             }
                           : undefined
                       }
                       selectLabel={
                         process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true'
-                          ? (booking.status === 'payment_failed' ? "Retry Unlock (₦50)" : "Unlock Pass (₦50)")
+                          ? (booking.status === 'payment_failed' ? "Retry Unlock (₦100)" : "Unlock Pass (₦100)")
                           : "Confirm Match"
                       }
                     />

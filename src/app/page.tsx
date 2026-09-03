@@ -219,7 +219,7 @@ export default function Home() {
           <div className="space-y-2 text-center border-b border-dashed border-gazie-navy/10 pb-4">
             <h2 className="font-display font-bold text-lg">Gazie Commute Abuja</h2>
             <p className="text-xs text-gazie-navy/60 font-semibold uppercase tracking-wider">
-              Abuja Pilot Launch • Direct Driver Settlement
+              Abuja Pilot Launch • ₦100 Match Unlock • Direct Driver Settlement
             </p>
           </div>
 

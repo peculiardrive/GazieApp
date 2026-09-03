@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     }
 
     if (event === 'charge.success') {
-      const amountPaid = (data.amount || 5000) / 100; // Paystack is in kobo (₦50.00 is 5000 kobo)
+      const amountPaid = (data.amount || 10000) / 100; // Paystack is in kobo (₦100.00 is 10000 kobo)
       const paystackRef = data.reference;
       const status = data.status || 'success';
 

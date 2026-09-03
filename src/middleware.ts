@@ -3,12 +3,12 @@ import type { NextRequest } from 'next/server';
 
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.paystack.co;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.paystack.co https://*.paystack.co https://*.paystack.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   img-src 'self' blob: data: https:;
   font-src 'self' data: https://fonts.gstatic.com;
-  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.paystack.co https://api.resend.com https://api.mapbox.com;
-  frame-src 'self' https://checkout.paystack.com https://standard.paystack.co;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.paystack.co https://*.paystack.com https://api.resend.com https://api.mapbox.com;
+  frame-src 'self' https://checkout.paystack.com https://standard.paystack.co https://*.paystack.co https://*.paystack.com;
   frame-ancestors 'self';
   base-uri 'self';
   form-action 'self';
