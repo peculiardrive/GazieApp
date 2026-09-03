@@ -321,7 +321,13 @@ export default function Ticket({
             <div>
               <span className="text-[9px] text-gazie-navy opacity-60 block tracking-wider uppercase">FUEL CONTRIBUTION (CASH/TRANSFER)</span>
               <span className="font-mono text-lg font-bold text-gazie-navy">
-                {status === 'pending' ? 'TBD' : (fare === 0 ? 'FREE (₦0)' : formatFare(fare))}
+                {status === 'pending' || (!fare && (!driverPhone || driverName === 'Awaiting Admin Match')) || (fare === 0 && (!driverPhone || driverName === 'Awaiting Admin Match')) ? (
+                  <span className="font-sans text-xs font-bold text-gazie-navy/80">Fare to be Agreed with Driver</span>
+                ) : fare === 0 ? (
+                  <span className="font-sans text-xs font-bold text-[#2D6A4F]">FREE (No Charge)</span>
+                ) : (
+                  formatFare(fare)
+                )}
               </span>
             </div>
             <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider ${statusConfig.bg}`}>
