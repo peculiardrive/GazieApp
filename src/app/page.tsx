@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase, isMock } from '@/lib/supabase';
 import { ShieldCheck, Car, Users, Calendar, ArrowRight, ShieldAlert, BadgeCheck, Activity } from 'lucide-react';
 import Navbar from '@/components/ui/Navbar';
+import { COMMUNITY_HUBS } from '@/lib/communities';
 
 export default function Home() {
   const [session, setSession] = useState<any>(null);
@@ -178,6 +179,39 @@ export default function Home() {
           <a href="#about" className="inline-block font-mono text-[10px] font-bold text-gazie-navy underline hover:text-gazie-green transition">
             Learn more ↓
           </a>
+        </div>
+
+        {/* Faith & Church Communities Showcase */}
+        <div className="w-full bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-3 mb-6">
+          <div className="flex items-center justify-between border-b border-dashed border-gazie-navy/10 pb-2.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">⛪</span>
+              <h3 className="font-display font-extrabold text-xs sm:text-sm text-gazie-navy uppercase tracking-wider">
+                Community & Church Hubs
+              </h3>
+            </div>
+            <span className="text-[9px] font-mono font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] px-2.5 py-0.5 rounded-full border border-[#2D6A4F]/20">
+              Trusted Fellowship
+            </span>
+          </div>
+          <p className="text-xs text-gazie-navy/70 leading-relaxed">
+            Carpool with brethren and colleagues for Sunday services, midweek fellowships, and daily commute corridors.
+          </p>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {COMMUNITY_HUBS.map((hub, idx) => (
+              <span
+                key={hub.id}
+                className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-xl border font-bold transition ${
+                  idx === 0
+                    ? 'bg-gazie-yellow text-gazie-navy border-gazie-navy font-black shadow-xs ring-1 ring-gazie-navy/20'
+                    : 'bg-gazie-paper/50 text-gazie-navy/80 border-gazie-navy/20'
+                }`}
+              >
+                <span>{hub.icon}</span>
+                <span>{hub.shortName}</span>
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* CTA Section */}
