@@ -144,10 +144,21 @@ export default function ProfilePage() {
         updateData.rejection_reason = null; // Clear rejection reason
       }
 
-      const { error } = await supabase
+      let { error } = await supabase
         .from('profiles')
         .update(updateData)
         .eq('id', user.id);
+
+      // Graceful fallback if community_name column does not exist in live Supabase DB
+      if (error && (error.code === '42703' || error.message?.includes('community_name'))) {
+        console.warn('community_name column not found in database, retrying update without it:', error.message);
+        delete updateData.community_name;
+        const retry = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', user.id);
+        error = retry.error;
+      }
 
       if (error) {
         setMessage({ text: error.message, isError: true });

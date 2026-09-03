@@ -252,22 +252,38 @@ export default function DriverDashboard() {
       }
 
       // Insert posting
-      const { data: newPosting, error: postError } = await supabase
+      const postingPayload: any = {
+        driver_id: user.id,
+        pickup: postPickup,
+        destination: postDestination,
+        departure_date: postDate,
+        departure_time: postTime,
+        seats_total: parseInt(postSeats),
+        seats_available: parseInt(postSeats),
+        fare_per_seat: parseFloat(postFare),
+        is_recurring: isRecurring,
+        recurring_template_id: templateId,
+        status: 'active'
+      };
+
+      if (postCommunity && postCommunity.trim()) {
+        postingPayload.community_name = postCommunity.trim();
+      }
+
+      let { data: newPosting, error: postError } = await supabase
         .from('ride_postings')
-        .insert({
-          driver_id: user.id,
-          pickup: postPickup,
-          destination: postDestination,
-          departure_date: postDate,
-          departure_time: postTime,
-          seats_total: parseInt(postSeats),
-          seats_available: parseInt(postSeats),
-          fare_per_seat: parseFloat(postFare),
-          community_name: postCommunity.trim() || null,
-          is_recurring: isRecurring,
-          recurring_template_id: templateId,
-          status: 'active'
-        });
+        .insert(postingPayload);
+
+      // Graceful fallback: If community_name column does not exist in live Supabase DB, retry without it
+      if (postError && (postError.code === '42703' || postError.message?.includes('community_name'))) {
+        console.warn('community_name column not found in database, retrying insert without it:', postError.message);
+        delete postingPayload.community_name;
+        const retry = await supabase
+          .from('ride_postings')
+          .insert(postingPayload);
+        newPosting = retry.data;
+        postError = retry.error;
+      }
 
       if (postError) {
         showToast('Failed to post ride: ' + postError.message, 'error');
