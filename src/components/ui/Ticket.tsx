@@ -24,6 +24,7 @@ interface TicketProps {
   onSelect?: () => void;
   selectLabel?: string;
   showMapPreview?: boolean;
+  communityName?: string | null;
 }
 
 export default function Ticket({
@@ -47,7 +48,8 @@ export default function Ticket({
   onComplete,
   onSelect,
   selectLabel,
-  showMapPreview = false
+  showMapPreview = false,
+  communityName
 }: TicketProps) {
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const mapUrl = showMapPreview ? getStaticMapUrl(pickup, destination) : null;
@@ -118,6 +120,17 @@ export default function Ticket({
           <span className="font-display text-sm font-semibold tracking-wider">GAZIE COMMUTE PASS</span>
           <div className="w-2 h-2 rounded-full bg-gazie-yellow animate-ping" />
         </div>
+
+        {/* Optional Community Hub Badge */}
+        {communityName && (
+          <div className="bg-[#2D6A4F]/10 border-b border-[#2D6A4F]/20 px-4 py-1.5 flex items-center justify-between text-[11px] font-bold text-[#2D6A4F]">
+            <span className="flex items-center gap-1.5">
+              <span>⛪</span>
+              <span>{communityName}</span>
+            </span>
+            <span className="text-[9px] uppercase tracking-wider bg-[#2D6A4F]/20 px-2 py-0.5 rounded-full font-extrabold">Community Match</span>
+          </div>
+        )}
 
         {/* Main Body */}
         <div className="p-4 flex-1">
@@ -261,8 +274,8 @@ export default function Ticket({
             <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5">
               <CreditCard className="w-5 h-5 text-amber-600 shrink-0" />
               <div className="text-left">
-                <span className="text-[11px] font-bold text-amber-900 block">MATCH LOCKED</span>
-                <span className="text-[10px] text-amber-800 block">Complete the ₦50 platform unlock fee to reveal driver and vehicle details.</span>
+                <span className="text-[11px] font-bold text-amber-900 block">MATCH CONFIRMATION PENDING</span>
+                <span className="text-[10px] text-amber-800 block">Your commute match request is being finalized with the driver.</span>
               </div>
             </div>
           )}

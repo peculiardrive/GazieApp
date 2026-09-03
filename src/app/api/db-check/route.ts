@@ -1,7 +1,19 @@
 import { NextResponse } from 'next/server';
 import { supabase, isMock } from '@/lib/supabase';
 
-export async function GET() {
+export async function GET(req: Request) {
+  // Prevent public information disclosure in production
+  const authHeader = req.headers.get('x-admin-key') || req.headers.get('authorization');
+  const adminSecret = process.env.ADMIN_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const isDev = process.env.NODE_ENV === 'development';
+
+  if (!isDev && (!authHeader || !adminSecret || (authHeader !== adminSecret && authHeader !== `Bearer ${adminSecret}`))) {
+    return NextResponse.json(
+      { error: 'Unauthorized: Diagnostic endpoint restricted' },
+      { status: 403 }
+    );
+  }
+
   if (isMock) {
     return NextResponse.json({
       status: 'mock_mode',

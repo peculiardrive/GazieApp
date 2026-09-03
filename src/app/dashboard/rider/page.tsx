@@ -12,6 +12,7 @@ import Script from 'next/script';
 import VerificationModal from '@/components/ui/VerificationModal';
 import RatingModal from '@/components/ui/RatingModal';
 import { STANDARD_ABUJA_DESTINATIONS } from '@/lib/routes';
+import { COMMUNITY_HUBS } from '@/lib/communities';
 
 export default function RiderDashboard() {
   const router = useRouter();
@@ -95,16 +96,54 @@ export default function RiderDashboard() {
       return;
     }
 
+    // Generate unique timestamped reference to avoid Paystack duplicate reference rejection
+    const uniqueRef = `gc_${bookingId}_${Date.now()}`;
+    const cleanEmail = riderEmail && riderEmail.includes('@') ? riderEmail.trim() : `rider_${Date.now()}@gaziecommute.com`;
+
     const paystack = new (window as any).PaystackPop();
     paystack.newTransaction({
       key: publicKey,
-      email: riderEmail,
+      email: cleanEmail,
       amount: 5000, // ₦50 in kobo
-      ref: bookingId,
-      channels: ['card', 'bank_transfer', 'ussd'],
-      onSuccess: function(response: any) {
+      ref: uniqueRef,
+      metadata: {
+        booking_id: bookingId,
+        custom_fields: [
+          {
+            display_name: "Booking ID",
+            variable_name: "booking_id",
+            value: bookingId
+          }
+        ]
+      },
+      channels: ['card', 'bank_transfer', 'ussd', 'qr'],
+      onSuccess: async function(response: any) {
         setPaymentProcessing(true);
         setPaymentBookingId(bookingId);
+        
+        const txRef = response?.reference || response?.trxref || uniqueRef;
+
+        try {
+          // Instant server-side verification and status unlock
+          const res = await fetch('/api/paystack/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reference: txRef, bookingId })
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            setPaymentProcessing(false);
+            setPaymentBookingId(null);
+            showToast('Payment verified! Your match has been unlocked.', 'success');
+            fetchRiderData();
+            return;
+          }
+        } catch (verifyErr) {
+          console.warn('Instant payment verification error, proceeding to polling:', verifyErr);
+        }
+
+        // Fallback polling if instant check takes longer
         pollBookingStatus(bookingId);
       },
       onCancel: function() {
@@ -223,6 +262,7 @@ export default function RiderDashboard() {
   // Browse ride postings state
   const [allPostings, setAllPostings] = useState<any[]>([]);
   const [searchDest, setSearchDest] = useState('all');
+  const [selectedCommunity, setSelectedCommunity] = useState('all');
   const [searchDate, setSearchDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]); // tomorrow
   const [allDrivers, setAllDrivers] = useState<any[]>([]);
 
@@ -473,7 +513,8 @@ export default function RiderDashboard() {
         return;
       }
 
-      const isFeeEnabled = process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true';
+      // Disabled for pilot launch
+      const isFeeEnabled = false;
 
       if (isFeeEnabled) {
         let bookingId = '';
@@ -607,7 +648,8 @@ export default function RiderDashboard() {
     const routeMatch = searchDest === 'all' || post.destination === searchDest;
     const dateMatch = !searchDate || post.departure_date === searchDate;
     const activeMatch = post.status === 'active' && post.seats_available > 0;
-    return routeMatch && dateMatch && activeMatch;
+    const communityMatch = selectedCommunity === 'all' || post.community_name === selectedCommunity;
+    return routeMatch && dateMatch && activeMatch && communityMatch;
   });
 
   return (
@@ -799,6 +841,52 @@ export default function RiderDashboard() {
                     />
                   </div>
                 </div>
+
+                {/* Community Hubs Filter */}
+                <div className="space-y-1.5 pt-2 border-t border-dashed border-gazie-navy/10 sm:col-span-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70">
+                      ⛪ Faith & Community Hubs <span className="font-normal text-[9px] text-gazie-navy/40">(Optional)</span>
+                    </span>
+                    {selectedCommunity !== 'all' && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCommunity('all')}
+                        className="text-[9px] text-gazie-navy/60 underline hover:text-gazie-navy cursor-pointer"
+                      >
+                        Show All Corridors
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCommunity('all')}
+                      className={`text-[10px] px-3 py-1 rounded-full border shrink-0 transition font-bold cursor-pointer ${
+                        selectedCommunity === 'all'
+                          ? 'bg-gazie-navy text-white border-gazie-navy shadow-sm'
+                          : 'bg-white text-gazie-navy/70 border-gazie-navy/20 hover:border-gazie-navy'
+                      }`}
+                    >
+                      🌟 All Abuja Corridors
+                    </button>
+                    {COMMUNITY_HUBS.map((hub) => (
+                      <button
+                        type="button"
+                        key={hub.id}
+                        onClick={() => setSelectedCommunity(hub.shortName)}
+                        className={`text-[10px] px-3 py-1 rounded-full border shrink-0 transition font-bold cursor-pointer flex items-center gap-1 ${
+                          selectedCommunity === hub.shortName
+                            ? 'bg-[#2D6A4F] text-white border-[#2D6A4F] shadow-sm'
+                            : 'bg-white text-gazie-navy/70 border-gazie-navy/20 hover:border-[#2D6A4F] hover:text-[#2D6A4F]'
+                        }`}
+                      >
+                        <span>{hub.icon}</span>
+                        <span>{hub.shortName}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -832,8 +920,9 @@ export default function RiderDashboard() {
                         partnerRating={driver?.rating || 5.0}
                         driverPhone={`🚘 ${driver?.vehicle_make || ''} ${driver?.vehicle_model || ''}`}
                         vehicleInfo={`${posting.seats_available} of ${posting.seats_total} seats left`}
+                        communityName={posting.community_name}
                         onSelect={() => handleRequestRidePosting(posting)}
-                        selectLabel={process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true' ? "Unlock Match (₦50)" : "Request Commute"}
+                        selectLabel="Request Commute"
                         showMapPreview={true}
                       />
                     );
@@ -978,6 +1067,7 @@ export default function RiderDashboard() {
                       driverName={booking.driverName}
                       driverPhone={isVerified ? booking.driverPhone : 'Unverified (Contact Hidden)'}
                       partnerRating={booking.partnerRating}
+                      communityName={booking.community_name}
                       isRated={booking.isRated}
                       onRate={
                         (booking.status === 'completed' || booking.status === 'matched' || booking.status === 'confirmed')
@@ -1002,7 +1092,11 @@ export default function RiderDashboard() {
                             }
                           : undefined
                       }
-                      selectLabel={booking.status === 'payment_failed' ? "Retry Unlock (₦50)" : "Unlock Pass (₦50)"}
+                      selectLabel={
+                        process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true'
+                          ? (booking.status === 'payment_failed' ? "Retry Unlock (₦50)" : "Unlock Pass (₦50)")
+                          : "Confirm Match"
+                      }
                     />
                   ))}
                 </div>

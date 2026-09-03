@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { uploadDocument } from '@/lib/storage';
+import { COMMUNITY_HUBS } from '@/lib/communities';
 import Navbar from '@/components/ui/Navbar';
 import { ShieldCheck, Phone, User, Landmark, Car, HeartHandshake, BadgeAlert, ArrowLeft, Mail, FileText, Upload, ShieldAlert, Award, MapPin } from 'lucide-react';
 import { STANDARD_COMMUTE_ROUTES } from '@/lib/routes';
@@ -25,6 +26,7 @@ export default function ProfilePage() {
   const [usualRoute, setUsualRoute] = useState('');
   const [availableTimeWindow, setAvailableTimeWindow] = useState('');
   const [driverFare, setDriverFare] = useState('');
+  const [communityName, setCommunityName] = useState('');
 
   // Upload states
   const [riderIdFile, setRiderIdFile] = useState<File | null>(null);
@@ -62,6 +64,7 @@ export default function ProfilePage() {
           setUsualRoute(data.usual_route || '');
           setAvailableTimeWindow(data.available_time_window || '');
           setDriverFare(String(data.driver_fare || 0));
+          setCommunityName(data.community_name || '');
         }
       } catch (err) {
         console.error('Error loading profile:', err);
@@ -115,7 +118,8 @@ export default function ProfilePage() {
       const updateData: any = {
         full_name: fullName,
         id_url: currentIdUrl,
-        proof_of_address_url: currentProofUrl
+        proof_of_address_url: currentProofUrl,
+        community_name: communityName.trim() || null
       };
 
       if (profile.role === 'rider') {
@@ -297,6 +301,31 @@ export default function ProfilePage() {
                   required
                 />
               </div>
+            </div>
+
+            {/* Community / Faith Hub Affiliation */}
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                  Church / Community Hub <span className="font-normal lowercase text-gazie-navy/50">(optional)</span>
+                </label>
+                <span className="text-[9px] text-[#2D6A4F] font-bold">Trusted Community</span>
+              </div>
+              <select
+                value={communityName}
+                onChange={(e) => setCommunityName(e.target.value)}
+                className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold cursor-pointer"
+              >
+                <option value="">🌟 General Abuja Commuter (Open to All Corridors)</option>
+                {COMMUNITY_HUBS.map((hub) => (
+                  <option key={hub.id} value={hub.shortName}>
+                    {hub.icon} {hub.shortName} — {hub.landmark}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] text-gazie-navy/50">
+                Select your fellowship or parish to display a community trust badge on your ride passes.
+              </p>
             </div>
 
             {/* Rider specific */}

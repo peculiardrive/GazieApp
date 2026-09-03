@@ -53,9 +53,20 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Profiles Policies
 DROP POLICY IF EXISTS "Public profiles are viewable by anyone" ON public.profiles;
-CREATE POLICY "Public profiles are viewable by anyone" 
+DROP POLICY IF EXISTS "Profiles are viewable by owner, admins, or active commuters" ON public.profiles;
+CREATE POLICY "Profiles are viewable by owner, admins, or active commuters" 
   ON public.profiles FOR SELECT 
-  USING (true);
+  TO authenticated
+  USING (
+    auth.uid() = id OR 
+    public.current_user_is_admin() OR
+    role = 'driver' OR
+    EXISTS (
+      SELECT 1 FROM public.bookings b 
+      WHERE (b.rider_id = public.profiles.id AND b.driver_id = auth.uid()) OR
+            (b.driver_id = public.profiles.id AND b.rider_id = auth.uid())
+    )
+  );
 
 DROP POLICY IF EXISTS "Users and admins can insert profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Allow user signup or admin insert" ON public.profiles;
@@ -489,10 +500,11 @@ CREATE INDEX IF NOT EXISTS idx_profiles_phone ON public.profiles(phone);
 -- 9. SUPABASE STORAGE SETUP (verification-docs bucket for KYC)
 -- =========================================================================
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('verification-docs', 'verification-docs', true)
-ON CONFLICT (id) DO NOTHING;
+VALUES ('verification-docs', 'verification-docs', false)
+ON CONFLICT (id) DO UPDATE SET public = false;
 
 -- Allow authenticated users to upload documents into their own folder
+DROP POLICY IF EXISTS "Authenticated commuters can upload verification docs" ON storage.objects;
 CREATE POLICY "Authenticated commuters can upload verification docs"
 ON storage.objects FOR INSERT
 TO authenticated
@@ -502,6 +514,7 @@ WITH CHECK (
 );
 
 -- Allow users to update/upsert their own documents
+DROP POLICY IF EXISTS "Authenticated commuters can update their own verification docs" ON storage.objects;
 CREATE POLICY "Authenticated commuters can update their own verification docs"
 ON storage.objects FOR UPDATE
 TO authenticated
@@ -510,11 +523,18 @@ USING (
   (storage.foldername(name))[1] = auth.uid()::text
 );
 
--- Allow public / authenticated viewing of verification documents
-CREATE POLICY "Verification docs are accessible to commuters and admins"
+-- Only document owner or admin can view verification documents
+DROP POLICY IF EXISTS "Verification docs are accessible to commuters and admins" ON storage.objects;
+DROP POLICY IF EXISTS "Only document owner and admin can access verification docs" ON storage.objects;
+CREATE POLICY "Only document owner and admin can access verification docs"
 ON storage.objects FOR SELECT
 TO authenticated
-USING (bucket_id = 'verification-docs');
+USING (
+  bucket_id = 'verification-docs' AND (
+    (storage.foldername(name))[1] = auth.uid()::text OR
+    public.current_user_is_admin()
+  )
+);
 
 
 -- =========================================================================
@@ -546,5 +566,16 @@ CREATE POLICY "Users can create rating for completed trip"
 CREATE INDEX IF NOT EXISTS idx_ratings_reviewee_id ON public.ratings(reviewee_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_reviewer_id ON public.ratings(reviewer_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_booking_id ON public.ratings(booking_id);
+
+-- =========================================================================
+-- 11. COMMUNITY HUBS & FAITH COMMUNITIES (STRICTLY ADDITIVE & OPTIONAL)
+-- =========================================================================
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS community_name TEXT;
+ALTER TABLE public.ride_postings ADD COLUMN IF NOT EXISTS community_name TEXT;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS community_name TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_ride_postings_community ON public.ride_postings(community_name);
+CREATE INDEX IF NOT EXISTS idx_profiles_community ON public.profiles(community_name);
+
 
 

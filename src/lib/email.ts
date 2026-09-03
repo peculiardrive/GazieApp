@@ -4,7 +4,7 @@
  */
 
 const RESEND_API_URL = 'https://api.resend.com/emails';
-const SENDER_EMAIL = 'Gazie Commute <auth@gaziecommute.com>';
+const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || 'Gazie Commute <auth@gaziecommute.com>';
 
 interface SendEmailParams {
   to: string;
@@ -16,7 +16,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.error('RESEND_API_KEY is not configured in environment variables');
-    throw new Error('Email delivery service is temporarily unconfigured.');
+    throw new Error('Email delivery service is temporarily unconfigured. Please configure RESEND_API_KEY.');
   }
 
   const response = await fetch(RESEND_API_URL, {
@@ -36,8 +36,9 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
   const data = await response.json();
 
   if (!response.ok) {
-    console.error('Resend API error:', data);
-    throw new Error(data.message || 'Failed to dispatch email.');
+    console.error('Resend API error response:', JSON.stringify(data, null, 2));
+    const errorMsg = data?.message || data?.error?.message || 'Failed to dispatch email.';
+    throw new Error(`Email Dispatch Error: ${errorMsg}`);
   }
 
   return data;

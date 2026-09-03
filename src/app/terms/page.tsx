@@ -171,7 +171,7 @@ export default function TermsPage() {
                 <strong>Direct Fuel Cost Offset:</strong> Seat fares are established by drivers strictly as non-commercial contributions towards fuel and routine running costs. Fares are paid directly between passenger and car owner (via cash or instant transfer) at pickup or drop-off.
               </li>
               <li>
-                <strong>Platform Unlock Fee:</strong> Gazie Commute may charge a nominal match confirmation fee (e.g. ₦50) processed securely through our CBN-licensed payment partner, Paystack.
+                <strong>Platform Matching:</strong> During the Abuja pilot phase, Gazie Commute matching is 100% free (0% platform commission).
               </li>
             </ul>
           </section>

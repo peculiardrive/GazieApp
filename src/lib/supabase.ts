@@ -166,6 +166,7 @@ const initializeMockDb = () => {
         seats_total: 4,
         seats_available: 3,
         fare_per_seat: 1500,
+        community_name: 'Dunamis Glory Dome',
         is_recurring: true,
         recurring_template_id: 'template-uuid-1',
         status: 'active',

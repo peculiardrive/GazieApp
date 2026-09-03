@@ -24,6 +24,7 @@ export const STANDARD_ABUJA_DESTINATIONS = [
   'Life Camp',
 
   // Airport Road & Southern Corridor
+  'Summit Bible Church (Kaura)',
   'Lugbe Federal Housing',
   'Lugbe Total / Plaza',
   'TradeMore Estate',

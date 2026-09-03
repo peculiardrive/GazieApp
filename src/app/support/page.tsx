@@ -18,12 +18,12 @@ export default function SupportPage() {
       a: "The fare listed on the commute posting is paid directly to the driver at the start or completion of your trip via cash or instant bank transfer. Gazie Commute does not hold or deduct from the driver's fare."
     },
     {
-      q: "What is the ₦50 platform unlock fee?",
-      a: "To maintain platform security, verify KYC identities, and prevent ghost bookings, a nominal ₦50 unlock fee is processed via Paystack when confirming a match. This unlocks the driver's direct contact and vehicle registration details."
+      q: "Is Gazie Commute free to use during the pilot?",
+      a: "Yes! During the Abuja Pilot Launch, ride matching and platform access are completely free (0% commission). Riders pay their fuel contribution directly to the driver via cash or direct transfer at departure."
     },
     {
-      q: "What is the Refund Policy for platform unlock fees?",
-      a: "You are entitled to a 100% refund if a driver cancels, fails to show up within 15 minutes of departure, alters the schedule without your consent, or if a system/billing glitch occurs. To request a refund, message WhatsApp (+234 816 473 7221) or email gaziecommute@gmail.com with your Booking ID / Ticket Code and Paystack reference. Requests are acknowledged within 2–4 hours and reviewed within 24 hours. Approved refunds are reversed to your original bank account/card within 1–3 business days or credited instantly as a platform pass."
+      q: "How does payment work between riders and drivers?",
+      a: "Riders pay the agreed fuel contribution fare directly to the verified driver via cash or direct bank transfer upon boarding or arrival. Gazie Commute does not hold or deduct from the driver's fare during the pilot."
     },
     {
       q: "What is the cancellation policy?",

@@ -11,6 +11,7 @@ import { MapPin, Clock, Calendar, AlertTriangle, ShieldAlert, BadgeCheck, Car, L
 import VerificationModal from '@/components/ui/VerificationModal';
 import RatingModal from '@/components/ui/RatingModal';
 import { STANDARD_ABUJA_DESTINATIONS, STANDARD_COMMUTE_ROUTES, getKnownDestinations } from '@/lib/routes';
+import { COMMUNITY_HUBS } from '@/lib/communities';
 
 export default function DriverDashboard() {
   const router = useRouter();
@@ -62,6 +63,7 @@ export default function DriverDashboard() {
   const [postTime, setPostTime] = useState('07:30');
   const [postSeats, setPostSeats] = useState('4');
   const [postFare, setPostFare] = useState('');
+  const [postCommunity, setPostCommunity] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [postLoading, setPostLoading] = useState(false);
 
@@ -88,6 +90,9 @@ export default function DriverDashboard() {
         setUsualRoute(profileData.usual_route || '');
         setAvailableTimeWindow(profileData.available_time_window || '');
         setDriverFare(String(profileData.driver_fare || 0));
+        if (profileData.community_name) {
+          setPostCommunity(profileData.community_name);
+        }
         if (!postFare) setPostFare(String(profileData.driver_fare || 1000));
         if (!postPickup) setPostPickup(profileData.usual_route?.split(' to ')[0] || '');
       }
@@ -258,6 +263,7 @@ export default function DriverDashboard() {
           seats_total: parseInt(postSeats),
           seats_available: parseInt(postSeats),
           fare_per_seat: parseFloat(postFare),
+          community_name: postCommunity.trim() || null,
           is_recurring: isRecurring,
           recurring_template_id: templateId,
           status: 'active'
@@ -856,6 +862,28 @@ export default function DriverDashboard() {
                   </div>
                 </div>
 
+                {/* Community / Service Hub Tag (Optional) */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                      Community / Service Tag <span className="font-normal lowercase text-gazie-navy/50">(optional)</span>
+                    </label>
+                    <span className="text-[9px] text-[#2D6A4F] font-bold">Trusted Brethren Match</span>
+                  </div>
+                  <select
+                    value={postCommunity}
+                    onChange={(e) => setPostCommunity(e.target.value)}
+                    className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none focus:border-gazie-yellow cursor-pointer"
+                  >
+                    <option value="">🌟 General Commute (Open to All Verified Commuters)</option>
+                    {COMMUNITY_HUBS.map((hub) => (
+                      <option key={hub.id} value={hub.shortName}>
+                        {hub.icon} {hub.shortName} ({hub.type === 'church' ? 'Service/Fellowship' : 'Hub'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="flex items-center gap-2 pt-1">
                   <input
                     type="checkbox"
@@ -901,6 +929,7 @@ export default function DriverDashboard() {
                       fare={post.fare_per_seat}
                       role="driver"
                       riderName={`${post.seats_available} of ${post.seats_total} seats remaining`}
+                      communityName={post.community_name}
                       onCancel={() => handleCancelPosting(post.id)}
                       showMapPreview={true}
                     />

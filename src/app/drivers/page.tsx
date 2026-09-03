@@ -112,9 +112,9 @@ export default function DriversPage() {
 
             <div className="grid grid-cols-3 gap-3 border-t border-dashed border-gazie-navy/20 pt-5 text-center">
               <div>
-                <span className="block font-display text-2xl font-extrabold">N50</span>
+                <span className="block font-display text-2xl font-extrabold text-[#2D6A4F]">0%</span>
                 <span className="block text-[9px] font-bold uppercase tracking-wider text-gazie-navy/55">
-                  Rider unlock fee
+                  Platform Commission
                 </span>
               </div>
               <div>

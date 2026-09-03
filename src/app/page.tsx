@@ -183,11 +183,9 @@ export default function Home() {
         {/* CTA Section */}
         <div className="w-full bg-white border-2 border-gazie-navy rounded-2xl p-6 shadow-md space-y-4 mb-8">
           <div className="space-y-2 text-center border-b border-dashed border-gazie-navy/10 pb-4">
-            <h2 className="font-display font-bold text-lg">
-              {process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true' ? 'Gazie Commute Abuja' : 'Launch Promotional Period'}
-            </h2>
+            <h2 className="font-display font-bold text-lg">Gazie Commute Abuja</h2>
             <p className="text-xs text-gazie-navy/60 font-semibold uppercase tracking-wider">
-              {process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true' ? '₦50 Platform Match Unlock Fee' : 'No App Commission on Ride Fares'}
+              Abuja Pilot Launch • Direct Driver Settlement
             </p>
           </div>
 

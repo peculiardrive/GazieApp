@@ -26,6 +26,7 @@ export interface Profile {
   id_url?: string | null;
   proof_of_address_url?: string | null;
   license_url?: string | null;
+  community_name?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -52,6 +53,7 @@ export interface Booking {
   status: BookingStatus;
   driver_fare: number;
   platform_fee: number;
+  community_name?: string | null;
   created_at: string;
   updated_at?: string;
 }
@@ -68,6 +70,7 @@ export interface RidePosting {
   fare_per_seat: number;
   is_recurring: boolean;
   recurring_template_id?: string | null;
+  community_name?: string | null;
   status: 'active' | 'full' | 'completed' | 'cancelled';
   created_at: string;
 }

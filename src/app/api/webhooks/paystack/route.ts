@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://buxiqqduzatptmrdkcwu.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: { autoRefreshToken: false, persistSession: false }
+});
 
 export async function POST(req: Request) {
   try {
@@ -32,18 +39,35 @@ export async function POST(req: Request) {
     const event = payload.event;
     const data = payload.data;
 
-    console.log(`Paystack Webhook: Received event "${event}" with reference: "${data.reference}"`);
+    console.log(`Paystack Webhook: Received event "${event}" with reference: "${data?.reference}"`);
 
-    // We pass booking ID as reference
-    const bookingId = data.reference;
+    // Safely extract booking ID from metadata or formatted reference (gc_<bookingId>_<timestamp>)
+    const rawRef = data?.reference || '';
+    let bookingId = data?.metadata?.booking_id;
+
+    if (!bookingId && Array.isArray(data?.metadata?.custom_fields)) {
+      const field = data.metadata.custom_fields.find((f: any) => f.variable_name === 'booking_id');
+      if (field?.value) bookingId = field.value;
+    }
+
+    if (!bookingId) {
+      if (rawRef.startsWith('gc_')) {
+        const parts = rawRef.split('_');
+        bookingId = parts[1];
+      } else if (rawRef.includes('_')) {
+        bookingId = rawRef.split('_')[0];
+      } else {
+        bookingId = rawRef;
+      }
+    }
 
     if (event === 'charge.success') {
-      const amountPaid = data.amount / 100; // Paystack is in kobo (₦50.00 is 5000 kobo)
+      const amountPaid = (data.amount || 5000) / 100; // Paystack is in kobo (₦50.00 is 5000 kobo)
       const paystackRef = data.reference;
-      const status = data.status; // 'success'
+      const status = data.status || 'success';
 
       // 1. Fetch booking record
-      const { data: booking, error: bookingErr } = await supabase
+      const { data: booking, error: bookingErr } = await supabaseAdmin
         .from('bookings')
         .select('*')
         .eq('id', bookingId)
@@ -61,7 +85,7 @@ export async function POST(req: Request) {
       }
 
       // 2. Fetch ride posting to verify and update seat count
-      const { data: posting, error: postingErr } = await supabase
+      const { data: posting, error: postingErr } = await supabaseAdmin
         .from('ride_postings')
         .select('*')
         .eq('id', booking.ride_posting_id)
@@ -76,12 +100,12 @@ export async function POST(req: Request) {
       if (posting.seats_available <= 0) {
         console.warn('Paystack Webhook: Seats already full. Marking payment_failed.');
         
-        await supabase
+        await supabaseAdmin
           .from('bookings')
           .update({ status: 'payment_failed' })
           .eq('id', booking.id);
 
-        await supabase.from('notifications').insert({
+        await supabaseAdmin.from('notifications').insert({
           user_id: booking.rider_id,
           title: 'Unlock Match Failed',
           message: `Your payment was successful, but the last seat on the ride from ${booking.pickup} to ${booking.destination} was taken. Please contact support at gaziecommute@gmail.com for a refund.`,
@@ -92,8 +116,8 @@ export async function POST(req: Request) {
       }
 
       // 3. Decrement seats available on the posting row
-      const nextSeatsAvailable = posting.seats_available - 1;
-      await supabase
+      const nextSeatsAvailable = Math.max(0, posting.seats_available - 1);
+      await supabaseAdmin
         .from('ride_postings')
         .update({
           seats_available: nextSeatsAvailable,
@@ -102,7 +126,7 @@ export async function POST(req: Request) {
         .eq('id', posting.id);
 
       // 4. Update the booking status and log platform fee
-      await supabase
+      await supabaseAdmin
         .from('bookings')
         .update({
           status: 'confirmed',
@@ -111,7 +135,7 @@ export async function POST(req: Request) {
         .eq('id', booking.id);
 
       // 5. Store audit log entry in the payments table
-      await supabase
+      await supabaseAdmin
         .from('payments')
         .insert({
           booking_id: booking.id,
@@ -121,7 +145,7 @@ export async function POST(req: Request) {
         });
 
       // 6. Alert passenger and driver via in-app notification system
-      await supabase.from('notifications').insert([
+      await supabaseAdmin.from('notifications').insert([
         {
           user_id: booking.rider_id,
           title: 'Unlock Confirmed!',
@@ -142,13 +166,13 @@ export async function POST(req: Request) {
 
     if (event === 'charge.failed') {
       // Mark booking match status as payment_failed
-      await supabase
+      await supabaseAdmin
         .from('bookings')
         .update({ status: 'payment_failed' })
         .eq('id', bookingId);
 
-      await supabase.from('notifications').insert({
-        user_id: data.metadata?.rider_id || data.customer?.id || '',
+      await supabaseAdmin.from('notifications').insert({
+        user_id: data?.metadata?.rider_id || data?.customer?.id || '',
         title: 'Payment Failed',
         message: 'Your platform unlock fee payment failed. Please retry to confirm your match.',
         read: false
