@@ -973,7 +973,7 @@ export default function RiderDashboard() {
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gazie-navy/40" />
                       <input
                         type="text"
-                        placeholder="e.g. Lugbe Federal Housing Gate"
+                        placeholder="e.g. Total Filling Station"
                         value={pickup}
                         onChange={(e) => setPickup(e.target.value)}
                         className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold"
