@@ -259,10 +259,10 @@ export default function RiderDashboard() {
   // Tab state
   const [activeTab, setActiveTab] = useState<'browse' | 'passes'>('browse');
 
-  // Browse ride postings state
   const [allPostings, setAllPostings] = useState<any[]>([]);
   const [searchDest, setSearchDest] = useState('all');
   const [selectedCommunity, setSelectedCommunity] = useState('all');
+  const [showCustomRouteForm, setShowCustomRouteForm] = useState(false);
   const [searchDate, setSearchDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]); // tomorrow
   const [allDrivers, setAllDrivers] = useState<any[]>([]);
 
@@ -894,11 +894,16 @@ export default function RiderDashboard() {
             <section className="space-y-3">
               <h2 className="font-display font-extrabold text-lg tracking-tight">Available Commutes</h2>
               {filteredPostings.length === 0 ? (
-                <div className="bg-white border border-dashed border-gazie-navy/20 rounded-2xl p-8 text-center space-y-4">
-                  <p className="text-xs text-gazie-navy/60 font-semibold">No driver has posted a matching commute for this date yet.</p>
-                  <div className="border-t border-dashed border-gazie-navy/10 pt-4 max-w-xs mx-auto">
-                    <span className="text-[10px] text-gazie-navy/40 uppercase font-bold tracking-wider">Alternative option</span>
-                    <p className="text-[10px] text-gazie-navy/50 mt-1">Submit your custom route and departure details below. Platform admins will try to match you with a driver manually!</p>
+                <div className="bg-white border border-dashed border-gazie-navy/20 rounded-2xl p-6 text-center space-y-3">
+                  <p className="text-xs text-gazie-navy/60 font-semibold">No driver has posted a matching commute for this selection yet.</p>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomRouteForm(!showCustomRouteForm)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gazie-navy bg-gazie-yellow/30 text-gazie-navy text-xs font-bold hover:bg-gazie-yellow transition cursor-pointer shadow-xs"
+                    >
+                      {showCustomRouteForm ? '✕ Hide Request Form' : '📍 Can\'t find your corridor? Request a Custom Route'}
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -929,16 +934,36 @@ export default function RiderDashboard() {
                   })}
                 </div>
               )}
+
+              {/* Subtle footer toggle when rides are present */}
+              {filteredPostings.length > 0 && !showCustomRouteForm && (
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomRouteForm(true)}
+                    className="text-[11px] font-bold text-gazie-navy/60 hover:text-gazie-navy underline cursor-pointer"
+                  >
+                    Need a different corridor? Request a custom route →
+                  </button>
+                </div>
+              )}
             </section>
 
-            {/* Custom Fallback booking scheduler */}
-            {filteredPostings.length === 0 && (
-              <section className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-4">
+            {/* Collapsible custom route request drawer */}
+            {showCustomRouteForm && (
+              <section className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-4 animate-fadeIn">
                 <div className="border-b border-dashed border-gazie-navy/10 pb-3 flex justify-between items-center">
-                  <h2 className="font-display font-extrabold text-lg tracking-tight">Schedule Route Request</h2>
-                  <span className="font-mono text-[10px] bg-gazie-yellow text-gazie-navy px-2 py-0.5 rounded font-bold uppercase">
-                    Admin Match
-                  </span>
+                  <div>
+                    <h2 className="font-display font-extrabold text-base tracking-tight">Request Custom Route</h2>
+                    <p className="text-[10px] text-gazie-navy/50">Submit your route and our admins will help connect you with a driver.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomRouteForm(false)}
+                    className="text-xs font-bold text-gazie-navy/50 hover:text-gazie-navy cursor-pointer px-2 py-1 rounded-md bg-gazie-paper/50"
+                  >
+                    ✕ Close
+                  </button>
                 </div>
 
                 <form onSubmit={handleCreateBooking} className="space-y-4">
