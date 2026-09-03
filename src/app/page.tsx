@@ -191,11 +191,11 @@ export default function Home() {
               </h3>
             </div>
             <span className="text-[9px] font-mono font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] px-2.5 py-0.5 rounded-full border border-[#2D6A4F]/20">
-              Trusted Fellowship
+              Verified Community Match
             </span>
           </div>
           <p className="text-xs text-gazie-navy/70 leading-relaxed">
-            Carpool with brethren and colleagues for Sunday services, midweek fellowships, and daily commute corridors.
+            Carpool with fellow members, neighbors, and colleagues for Sunday services, midweek fellowships, and daily commute corridors.
           </p>
           <div className="flex flex-wrap gap-1.5 pt-1">
             {COMMUNITY_HUBS.map((hub, idx) => (

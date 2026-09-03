@@ -833,7 +833,7 @@ export default function DriverDashboard() {
                     <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">
                       Community / Service Tag <span className="font-normal lowercase text-gazie-navy/50">(optional)</span>
                     </label>
-                    <span className="text-[9px] text-[#2D6A4F] font-bold">Trusted Brethren Match</span>
+                    <span className="text-[9px] text-[#2D6A4F] font-bold">Verified Community Match</span>
                   </div>
                   <select
                     value={postCommunity}

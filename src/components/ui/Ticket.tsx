@@ -128,7 +128,7 @@ export default function Ticket({
               <span>⛪</span>
               <span>{communityName}</span>
             </span>
-            <span className="text-[9px] uppercase tracking-wider bg-[#2D6A4F]/20 px-2 py-0.5 rounded-full font-extrabold">Community Match</span>
+            <span className="text-[9px] uppercase tracking-wider bg-[#2D6A4F]/20 px-2 py-0.5 rounded-full font-extrabold">Verified Community Match</span>
           </div>
         )}
 
