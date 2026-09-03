@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Calendar, Clock, CheckCircle, Clock3, AlertCircle, Phone, CreditCard, ShieldAlert, ChevronDown, Star } from 'lucide-react';
+import { MapPin, Calendar, Clock, CheckCircle, Clock3, AlertCircle, Phone, CreditCard, ShieldAlert, ChevronDown, Star, HelpCircle, ShieldCheck } from 'lucide-react';
 import { getStaticMapUrl } from '@/lib/geocoding';
 
 interface TicketProps {
@@ -52,6 +52,7 @@ export default function Ticket({
   communityName
 }: TicketProps) {
   const [isMapExpanded, setIsMapExpanded] = useState(false);
+  const [showFeeExplanation, setShowFeeExplanation] = useState(false);
   const mapUrl = showMapPreview ? getStaticMapUrl(pickup, destination) : null;
 
   // Generate a mock ticket serial code from ID
@@ -271,12 +272,35 @@ export default function Ticket({
 
           {/* Locked Notice Block */}
           {status === 'requested' && role === 'rider' && (
-            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5">
-              <CreditCard className="w-5 h-5 text-amber-600 shrink-0" />
-              <div className="text-left">
-                <span className="text-[11px] font-bold text-amber-900 block">MATCH CONFIRMATION PENDING</span>
-                <span className="text-[10px] text-amber-800 block">Your commute match request is being finalized with the driver.</span>
+            <div className="mt-4 p-3 bg-amber-50/90 border border-amber-200 rounded-xl space-y-1.5 text-left">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-amber-950 font-bold text-xs">
+                  <CreditCard className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>MATCH READY TO UNLOCK (₦100)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowFeeExplanation(!showFeeExplanation)}
+                  className="text-[10px] font-bold text-amber-900 underline hover:text-amber-950 flex items-center gap-0.5 cursor-pointer"
+                >
+                  <HelpCircle className="w-3 h-3" />
+                  <span>{showFeeExplanation ? 'Hide info' : 'Why ₦100 fee?'}</span>
+                </button>
               </div>
+              <p className="text-[10px] text-amber-900/80 leading-relaxed">
+                Pay the ₦100 match unlock fee to lock in your seat and reveal your verified driver's phone number. Fuel contribution is paid directly to your driver.
+              </p>
+              {showFeeExplanation && (
+                <div className="mt-2 p-2.5 bg-white border border-amber-300 rounded-lg text-left text-[10px] text-gazie-navy/80 space-y-1 animate-fadeIn shadow-xs">
+                  <div className="font-extrabold text-gazie-navy flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-gazie-green" />
+                    What the ₦100 unlock fee covers:
+                  </div>
+                  <p>• <strong>Verified Security:</strong> Covers NIN & driver licence verification so you commute safely.</p>
+                  <p>• <strong>Guaranteed Seat:</strong> Reserves your seat the day before so the driver saves it exclusively for you.</p>
+                  <p>• <strong>0% Driver Commission:</strong> 100% of your fuel fare (e.g. ₦1,000) goes directly to your driver.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -339,12 +363,25 @@ export default function Ticket({
                 </button>
               )}
               {onSelect && (
-                <button
-                  onClick={onSelect}
-                  className="flex-1 min-w-[120px] text-[11px] font-bold bg-gazie-navy text-gazie-paper border border-gazie-navy hover:bg-gazie-yellow hover:text-gazie-navy py-1.5 rounded-lg transition-all duration-200 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap"
-                >
-                  {selectLabel || 'Select Commute'}
-                </button>
+                <div className="flex-1 flex items-center gap-1.5">
+                  <button
+                    onClick={onSelect}
+                    className="flex-1 min-w-[120px] text-[11px] font-bold bg-gazie-navy text-gazie-paper border border-gazie-navy hover:bg-gazie-yellow hover:text-gazie-navy py-1.5 rounded-lg transition-all duration-200 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap"
+                  >
+                    {selectLabel || 'Select Commute'}
+                  </button>
+                  {selectLabel?.includes('100') && !showFeeExplanation && (
+                    <button
+                      type="button"
+                      onClick={() => setShowFeeExplanation(true)}
+                      className="px-2 py-1.5 rounded-lg border border-gazie-navy/20 bg-white text-gazie-navy text-[10px] font-bold hover:bg-gazie-paper/60 transition cursor-pointer shrink-0 flex items-center gap-0.5"
+                      title="Why the ₦100 unlock fee?"
+                    >
+                      <HelpCircle className="w-3 h-3 text-gazie-navy/60" />
+                      <span className="hidden sm:inline">Why ₦100?</span>
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}
