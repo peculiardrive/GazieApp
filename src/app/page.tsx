@@ -197,6 +197,24 @@ export default function Home() {
           <p className="text-xs text-gazie-navy/70 leading-relaxed">
             Carpool with fellow members, neighbors, and colleagues for Sunday services, midweek fellowships, and daily commute corridors.
           </p>
+          {/* Sunday Fellowship Free Pass Promo Callout */}
+          <div className="bg-[#2D6A4F]/10 border border-[#2D6A4F]/30 rounded-xl p-3.5 flex items-start gap-2.5 text-left">
+            <span className="text-xl shrink-0">🎁</span>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-display font-black text-xs uppercase text-[#2D6A4F] tracking-wide">
+                  Sunday Fellowship Promo: 100% Free Pass (₦0)
+                </span>
+                <span className="text-[9px] bg-[#2D6A4F] text-white px-1.5 py-0.2 rounded font-mono font-bold uppercase">
+                  Active
+                </span>
+              </div>
+              <p className="text-[11px] text-gazie-navy/80 leading-relaxed font-medium">
+                Platform unlock fees are waived on Sundays for all church services and small cell groups across Abuja. Brethren carpool together with zero platform charges!
+              </p>
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-1.5 pt-1">
             {COMMUNITY_HUBS.map((hub, idx) => (
               <span

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MapPin, Calendar, Clock, CheckCircle, Clock3, AlertCircle, Phone, CreditCard, ShieldAlert, ChevronDown, Star, HelpCircle, ShieldCheck } from 'lucide-react';
 import { getStaticMapUrl } from '@/lib/geocoding';
+import { isFreeSundayChurchCommute } from '@/lib/communities';
 
 interface TicketProps {
   id?: string;
@@ -54,6 +55,13 @@ export default function Ticket({
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [showFeeExplanation, setShowFeeExplanation] = useState(false);
   const mapUrl = showMapPreview ? getStaticMapUrl(pickup, destination) : null;
+
+  const isFreeSunday = isFreeSundayChurchCommute({
+    date,
+    communityName,
+    pickup,
+    destination
+  });
 
   // Generate a mock ticket serial code from ID
   const ticketCode = id ? `GZ-${id.substring(0, 5).toUpperCase()}` : 'GZ-PILOT';
@@ -272,36 +280,53 @@ export default function Ticket({
 
           {/* Locked Notice Block */}
           {status === 'requested' && role === 'rider' && (
-            <div className="mt-4 p-3 bg-amber-50/90 border border-amber-200 rounded-xl space-y-1.5 text-left">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-amber-950 font-bold text-xs">
-                  <CreditCard className="w-4 h-4 text-amber-700 shrink-0" />
-                  <span>MATCH READY TO UNLOCK (₦100)</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowFeeExplanation(!showFeeExplanation)}
-                  className="text-[10px] font-bold text-amber-900 underline hover:text-amber-950 flex items-center gap-0.5 cursor-pointer"
-                >
-                  <HelpCircle className="w-3 h-3" />
-                  <span>{showFeeExplanation ? 'Hide info' : 'Why ₦100 fee?'}</span>
-                </button>
-              </div>
-              <p className="text-[10px] text-amber-900/80 leading-relaxed">
-                Pay the ₦100 match unlock fee to lock in your seat and reveal your verified driver's phone number. Fuel contribution is paid directly to your driver.
-              </p>
-              {showFeeExplanation && (
-                <div className="mt-2 p-2.5 bg-white border border-amber-300 rounded-lg text-left text-[10px] text-gazie-navy/80 space-y-1 animate-fadeIn shadow-xs">
-                  <div className="font-extrabold text-gazie-navy flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-gazie-green" />
-                    What the ₦100 unlock fee covers:
+            isFreeSunday ? (
+              <div className="mt-4 p-3 bg-emerald-50/90 border border-emerald-300 rounded-xl space-y-1.5 text-left animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-emerald-950 font-bold text-xs">
+                    <span className="text-base">⛪</span>
+                    <span>FREE SUNDAY CHURCH PASS (₦0)</span>
                   </div>
-                  <p>• <strong>Verified Security:</strong> Covers NIN & driver licence verification so you commute safely.</p>
-                  <p>• <strong>Guaranteed Seat:</strong> Reserves your seat the day before so the driver saves it exclusively for you.</p>
-                  <p>• <strong>0% Driver Commission:</strong> 100% of your fuel fare (e.g. ₦1,000) goes directly to your driver.</p>
+                  <span className="text-[9px] bg-[#2D6A4F] text-white font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Fellowship Promo
+                  </span>
                 </div>
-              )}
-            </div>
+                <p className="text-[10px] text-emerald-900/90 leading-relaxed">
+                  Sunday rides for churches & small cell groups are 100% free of platform charges! Tap unlock below to lock your seat and reveal your verified driver's contact immediately.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-4 p-3 bg-amber-50/90 border border-amber-200 rounded-xl space-y-1.5 text-left">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-amber-950 font-bold text-xs">
+                    <CreditCard className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span>MATCH READY TO UNLOCK (₦100)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowFeeExplanation(!showFeeExplanation)}
+                    className="text-[10px] font-bold text-amber-900 underline hover:text-amber-950 flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <HelpCircle className="w-3 h-3" />
+                    <span>{showFeeExplanation ? 'Hide info' : 'Why ₦100 fee?'}</span>
+                  </button>
+                </div>
+                <p className="text-[10px] text-amber-900/80 leading-relaxed">
+                  Pay the ₦100 match unlock fee to lock in your seat and reveal your verified driver's phone number. Fuel contribution is paid directly to your driver.
+                </p>
+                {showFeeExplanation && (
+                  <div className="mt-2 p-2.5 bg-white border border-amber-300 rounded-lg text-left text-[10px] text-gazie-navy/80 space-y-1 animate-fadeIn shadow-xs">
+                    <div className="font-extrabold text-gazie-navy flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-gazie-green" />
+                      What the ₦100 unlock fee covers:
+                    </div>
+                    <p>• <strong>Verified Security:</strong> Covers NIN & driver licence verification so you commute safely.</p>
+                    <p>• <strong>Guaranteed Seat:</strong> Reserves your seat the day before so the driver saves it exclusively for you.</p>
+                    <p>• <strong>0% Driver Commission:</strong> 100% of your fuel fare (e.g. ₦1,000) goes directly to your driver.</p>
+                  </div>
+                )}
+              </div>
+            )
           )}
         </div>
 

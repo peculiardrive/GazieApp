@@ -12,7 +12,7 @@ import Script from 'next/script';
 import VerificationModal from '@/components/ui/VerificationModal';
 import RatingModal from '@/components/ui/RatingModal';
 import { STANDARD_ABUJA_DESTINATIONS } from '@/lib/routes';
-import { COMMUNITY_HUBS } from '@/lib/communities';
+import { COMMUNITY_HUBS, isFreeSundayChurchCommute } from '@/lib/communities';
 
 export default function RiderDashboard() {
   const router = useRouter();
@@ -526,7 +526,82 @@ export default function RiderDashboard() {
         return;
       }
 
-      // Platform unlock fee toggle (₦100)
+      // 1. Check if this commute qualifies for the 100% Free Sunday Church Pass
+      const isFreeSunday = isFreeSundayChurchCommute({
+        date: posting.departure_date,
+        communityName: posting.community_name,
+        pickup: posting.pickup,
+        destination: posting.destination,
+        riderCommunity: profile?.community_name
+      });
+
+      if (isFreeSunday) {
+        if (isMock) {
+          const bookingId = 'mock_booking_' + Date.now();
+          const bookingsKey = 'gazie_bookings';
+          let bookingsList = JSON.parse(localStorage.getItem(bookingsKey) || '[]');
+          bookingsList.push({
+            id: bookingId,
+            ride_posting_id: posting.id,
+            rider_id: user.id,
+            driver_id: posting.driver_id,
+            role: 'rider',
+            pickup: posting.pickup,
+            destination: posting.destination,
+            requested_date: posting.departure_date,
+            requested_time: posting.departure_time,
+            status: 'confirmed',
+            driver_fare: posting.fare_per_seat,
+            platform_fee: 0,
+            created_at: new Date().toISOString()
+          });
+          localStorage.setItem(bookingsKey, JSON.stringify(bookingsList));
+          showToast('🎉 Free Sunday Fellowship Pass confirmed! Driver contact details unlocked.', 'success');
+          fetchRiderData();
+          return;
+        }
+
+        // Insert booking with ₦0 platform fee
+        const { data: newBooking, error: bookingErr } = await supabase
+          .from('bookings')
+          .insert({
+            rider_id: user.id,
+            driver_id: posting.driver_id,
+            ride_posting_id: posting.id,
+            pickup: posting.pickup,
+            destination: posting.destination,
+            requested_date: posting.departure_date,
+            requested_time: posting.departure_time,
+            status: 'requested',
+            driver_fare: posting.fare_per_seat,
+            platform_fee: 0
+          })
+          .select('id')
+          .single();
+
+        if (bookingErr || !newBooking) {
+          showToast('Failed to initialize request: ' + (bookingErr?.message || 'Unknown error'), 'error');
+          return;
+        }
+
+        // Instantly unlock on server
+        const freeRes = await fetch('/api/bookings/free-unlock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookingId: newBooking.id, riderId: user.id })
+        });
+        const freeData = await freeRes.json();
+
+        if (freeData.success) {
+          showToast('🎉 Free Sunday Fellowship Pass confirmed! Driver contact details unlocked.', 'success');
+          fetchRiderData();
+        } else {
+          showToast(freeData.error || 'Failed to unlock free pass', 'error');
+        }
+        return;
+      }
+
+      // 2. Platform unlock fee toggle (₦100) for standard weekday rides
       const isFeeEnabled = process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true';
 
       if (isFeeEnabled) {
@@ -610,6 +685,30 @@ export default function RiderDashboard() {
       showToast(err.message || 'Error occurred', 'error');
     }
   };
+
+  const handleFreeSundayUnlock = async (booking: any) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const res = await fetch('/api/bookings/free-unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: booking.id, riderId: user.id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('🎉 Free Sunday Fellowship Pass confirmed! Driver contact unlocked.', 'success');
+        fetchRiderData();
+      } else {
+        showToast(data.error || 'Unable to unlock free pass', 'error');
+      }
+    } catch (err) {
+      console.error('Error unlocking free pass:', err);
+      showToast('Network error while unlocking free pass.', 'error');
+    }
+  };
+
 
   const handleMarkNotificationsRead = async () => {
     try {
@@ -940,7 +1039,17 @@ export default function RiderDashboard() {
                         vehicleInfo={`${posting.seats_available} of ${posting.seats_total} seats left`}
                         communityName={posting.community_name}
                         onSelect={() => handleRequestRidePosting(posting)}
-                        selectLabel="Request Commute"
+                        selectLabel={
+                          isFreeSundayChurchCommute({
+                            date: posting.departure_date,
+                            communityName: posting.community_name,
+                            pickup: posting.pickup,
+                            destination: posting.destination,
+                            riderCommunity: profile?.community_name
+                          })
+                            ? "Reserve Free Sunday Pass ⛪"
+                            : "Request Commute"
+                        }
                         showMapPreview={true}
                       />
                     );
@@ -1121,6 +1230,19 @@ export default function RiderDashboard() {
                       onSelect={
                         (booking.status === 'requested' || booking.status === 'payment_failed')
                           ? () => {
+                              const isFreeSunday = isFreeSundayChurchCommute({
+                                date: booking.requested_date,
+                                communityName: booking.community_name,
+                                pickup: booking.pickup,
+                                destination: booking.destination,
+                                riderCommunity: profile?.community_name
+                              });
+
+                              if (isFreeSunday) {
+                                handleFreeSundayUnlock(booking);
+                                return;
+                              }
+
                               const posting = allPostings.find(p => p.id === booking.ride_posting_id) || { id: booking.ride_posting_id, pickup: booking.pickup, destination: booking.destination, departure_date: booking.requested_date, departure_time: booking.requested_time, fare_per_seat: booking.driver_fare };
                               if (isMock) {
                                 triggerMockCheckout(booking.id, posting.id);
@@ -1132,9 +1254,21 @@ export default function RiderDashboard() {
                           : undefined
                       }
                       selectLabel={
-                        process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true'
-                          ? (booking.status === 'payment_failed' ? "Retry Unlock (₦100)" : "Unlock Pass (₦100)")
-                          : "Confirm Match"
+                        (() => {
+                          const isFreeSunday = isFreeSundayChurchCommute({
+                            date: booking.requested_date,
+                            communityName: booking.community_name,
+                            pickup: booking.pickup,
+                            destination: booking.destination,
+                            riderCommunity: profile?.community_name
+                          });
+                          if (isFreeSunday) {
+                            return "Unlock Free Sunday Pass ⛪ (₦0)";
+                          }
+                          return process.env.NEXT_PUBLIC_PLATFORM_FEE_ENABLED === 'true'
+                            ? (booking.status === 'payment_failed' ? "Retry Unlock (₦100)" : "Unlock Pass (₦100)")
+                            : "Confirm Match";
+                        })()
                       }
                     />
                   ))}
