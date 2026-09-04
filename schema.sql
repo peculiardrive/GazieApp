@@ -578,4 +578,82 @@ CREATE INDEX IF NOT EXISTS idx_ride_postings_community ON public.ride_postings(c
 CREATE INDEX IF NOT EXISTS idx_profiles_community ON public.profiles(community_name);
 
 
+-- =========================================================================
+-- 12. CHURCH COMMUNITIES, ZONES & CELL FELLOWSHIPS
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.churches (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  denomination TEXT,
+  address TEXT,
+  landmark TEXT,
+  city TEXT DEFAULT 'Abuja',
+  state TEXT DEFAULT 'FCT',
+  logo_url TEXT,
+  icon TEXT DEFAULT '⛪',
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'pending', 'suspended')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
 
+CREATE TABLE IF NOT EXISTS public.church_zones (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  church_id UUID REFERENCES public.churches(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  area TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.church_cells (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  church_id UUID REFERENCES public.churches(id) ON DELETE CASCADE NOT NULL,
+  zone_id UUID REFERENCES public.church_zones(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  location TEXT NOT NULL,
+  meeting_day TEXT DEFAULT 'Wednesday',
+  meeting_time TEXT DEFAULT '18:00',
+  leader_name TEXT,
+  leader_user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.church_requests (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  church_name TEXT NOT NULL,
+  denomination TEXT,
+  address TEXT,
+  city TEXT DEFAULT 'Abuja',
+  leader_contact TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  admin_notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS community_type TEXT DEFAULT 'estate';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS church_id UUID REFERENCES public.churches(id) ON DELETE SET NULL;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS church_zone_id UUID REFERENCES public.church_zones(id) ON DELETE SET NULL;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS church_cell_id UUID REFERENCES public.church_cells(id) ON DELETE SET NULL;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS community_verification_status TEXT DEFAULT 'unverified';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS community_role TEXT DEFAULT 'member';
+
+ALTER TABLE public.ride_postings ADD COLUMN IF NOT EXISTS ride_purpose TEXT DEFAULT 'work_commute';
+ALTER TABLE public.ride_postings ADD COLUMN IF NOT EXISTS church_id UUID REFERENCES public.churches(id) ON DELETE SET NULL;
+ALTER TABLE public.ride_postings ADD COLUMN IF NOT EXISTS church_zone_id UUID REFERENCES public.church_zones(id) ON DELETE SET NULL;
+ALTER TABLE public.ride_postings ADD COLUMN IF NOT EXISTS church_cell_id UUID REFERENCES public.church_cells(id) ON DELETE SET NULL;
+ALTER TABLE public.ride_postings ADD COLUMN IF NOT EXISTS service_event_name TEXT;
+ALTER TABLE public.ride_postings ADD COLUMN IF NOT EXISTS notes TEXT;
+
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS ride_purpose TEXT DEFAULT 'work_commute';
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS church_id UUID REFERENCES public.churches(id) ON DELETE SET NULL;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS church_cell_id UUID REFERENCES public.church_cells(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_churches_slug ON public.churches(slug);
+CREATE INDEX IF NOT EXISTS idx_church_zones_church ON public.church_zones(church_id);
+CREATE INDEX IF NOT EXISTS idx_church_cells_church ON public.church_cells(church_id);
+CREATE INDEX IF NOT EXISTS idx_church_cells_zone ON public.church_cells(zone_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_church ON public.profiles(church_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_church_cell ON public.profiles(church_cell_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_comm_status ON public.profiles(community_verification_status);
+CREATE INDEX IF NOT EXISTS idx_ride_postings_purpose ON public.ride_postings(ride_purpose);
+CREATE INDEX IF NOT EXISTS idx_ride_postings_church ON public.ride_postings(church_id);

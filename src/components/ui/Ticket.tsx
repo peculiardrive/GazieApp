@@ -26,6 +26,8 @@ interface TicketProps {
   selectLabel?: string;
   showMapPreview?: boolean;
   communityName?: string | null;
+  serviceName?: string | null;
+  ridePurpose?: string | null;
 }
 
 export default function Ticket({
@@ -50,7 +52,9 @@ export default function Ticket({
   onSelect,
   selectLabel,
   showMapPreview = false,
-  communityName
+  communityName,
+  serviceName,
+  ridePurpose
 }: TicketProps) {
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [showFeeExplanation, setShowFeeExplanation] = useState(false);
@@ -130,14 +134,16 @@ export default function Ticket({
           <div className="w-2 h-2 rounded-full bg-gazie-yellow animate-ping" />
         </div>
 
-        {/* Optional Community Hub Badge */}
-        {communityName && (
+        {/* Optional Community Hub / Church Badge */}
+        {(communityName || serviceName || (ridePurpose && ridePurpose !== 'work_commute')) && (
           <div className="bg-[#2D6A4F]/10 border-b border-[#2D6A4F]/20 px-4 py-1.5 flex items-center justify-between text-[11px] font-bold text-[#2D6A4F]">
-            <span className="flex items-center gap-1.5">
-              <span>⛪</span>
-              <span>{communityName}</span>
+            <span className="flex items-center gap-1.5 truncate">
+              <span>{ridePurpose?.includes('service') || ridePurpose?.includes('church') || ridePurpose === 'cell_meeting' ? '⛪' : '🏘️'}</span>
+              <span className="truncate">{communityName || 'Church Fellowship'}{serviceName ? ` • ${serviceName}` : ''}</span>
             </span>
-            <span className="text-[9px] uppercase tracking-wider bg-[#2D6A4F]/20 px-2 py-0.5 rounded-full font-extrabold">Verified Community Match</span>
+            <span className="text-[9px] uppercase tracking-wider bg-[#2D6A4F]/20 px-2 py-0.5 rounded-full font-extrabold shrink-0">
+              {ridePurpose === 'sunday_service' ? 'Sunday Service' : ridePurpose === 'cell_meeting' ? 'Cell Group' : ridePurpose === 'midweek_service' ? 'Midweek' : 'Verified Community'}
+            </span>
           </div>
         )}
 

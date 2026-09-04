@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import Navbar from '@/components/ui/Navbar';
 import Toast, { useToast } from '@/components/ui/Toast';
@@ -11,9 +12,10 @@ import {
   Check, X, Link as LinkIcon, ExternalLink, Calendar, Clock, Bookmark, 
   ArrowRight, TrendingUp, MapPin, BarChart3, Activity, Pencil, Save, 
   UserPlus, Trash2, Download, Search, RefreshCw, AlertTriangle, 
-  CheckCircle2, Phone, Shield, Eye
+  CheckCircle2, Phone, Shield, Eye, Church, Plus, Sparkles
 } from 'lucide-react';
 import { STANDARD_COMMUTE_ROUTES } from '@/lib/routes';
+import { fetchChurches, ChurchCommunity, SEED_CHURCHES } from '@/lib/churches';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -32,7 +34,12 @@ export default function AdminDashboard() {
   const [previewFileUrl, setPreviewFileUrl] = useState<string | null>(null);
 
   // Tab control
-  const [activeTab, setActiveTab] = useState<'queues' | 'analytics' | 'users'>('queues');
+  const [activeTab, setActiveTab] = useState<'queues' | 'analytics' | 'users' | 'churches'>('queues');
+
+  // Church admin state
+  const [adminChurches, setAdminChurches] = useState<ChurchCommunity[]>([]);
+  const [churchRequests, setChurchRequests] = useState<any[]>([]);
+  const [churchActionLoadingId, setChurchActionLoadingId] = useState<string | null>(null);
 
   const [currentAdminId, setCurrentAdminId] = useState<string>('');
 
@@ -114,10 +121,117 @@ export default function AdminDashboard() {
       setBookings(allBookings || []);
       setIncidents(allIncidents || []);
       setPostings(allPostings || []);
+
+      // Load church data
+      try {
+        const churches = await fetchChurches();
+        setAdminChurches(churches);
+
+        const { data: reqs } = await supabase
+          .from('church_requests')
+          .select('*')
+          .order('created_at', { ascending: false });
+        setChurchRequests(reqs || []);
+      } catch (cErr) {
+        console.warn('Church data load fallback:', cErr);
+      }
     } catch (err) {
       console.error('Error loading admin dashboard data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Church Member community verification approval/rejection
+  const handleApproveChurchMember = async (memberId: string) => {
+    setChurchActionLoadingId(memberId);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ community_verification_status: 'community_verified' })
+        .eq('id', memberId);
+
+      if (error) {
+        showToast('Approval failed: ' + error.message, 'error');
+      } else {
+        await supabase.from('notifications').insert({
+          user_id: memberId,
+          title: 'Church Fellowship Verified! ⛪',
+          message: 'Your church community verification has been approved by the Gazie Admin team!'
+        });
+        showToast('Member verified as church brethren!', 'success');
+        fetchAdminData();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error occurred', 'error');
+    } finally {
+      setChurchActionLoadingId(null);
+    }
+  };
+
+  const handleRejectChurchMember = async (memberId: string) => {
+    setChurchActionLoadingId(memberId);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ community_verification_status: 'unverified' })
+        .eq('id', memberId);
+
+      if (error) {
+        showToast('Update failed: ' + error.message, 'error');
+      } else {
+        showToast('Community verification marked unverified', 'info');
+        fetchAdminData();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error occurred', 'error');
+    } finally {
+      setChurchActionLoadingId(null);
+    }
+  };
+
+  // Church Request approval/rejection
+  const handleApproveChurchRequest = async (requestItem: any) => {
+    setChurchActionLoadingId(requestItem.id);
+    try {
+      const churchSlug = requestItem.church_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      
+      await supabase.from('churches').insert({
+        name: requestItem.church_name,
+        denomination: requestItem.denomination || 'Christian Ministry',
+        address: requestItem.address || requestItem.city_area,
+        city: 'Abuja',
+        slug: churchSlug
+      });
+
+      await supabase
+        .from('church_requests')
+        .update({ status: 'approved' })
+        .eq('id', requestItem.id);
+
+      showToast(`Church "${requestItem.church_name}" approved and added!`, 'success');
+      fetchAdminData();
+    } catch (err: any) {
+      showToast(err.message || 'Error approving request', 'error');
+    } finally {
+      setChurchActionLoadingId(null);
+    }
+  };
+
+  const handleRejectChurchRequest = async (requestId: string) => {
+    setChurchActionLoadingId(requestId);
+    try {
+      await supabase
+        .from('church_requests')
+        .update({ status: 'rejected' })
+        .eq('id', requestId);
+
+      showToast('Church request rejected', 'info');
+      fetchAdminData();
+    } catch (err: any) {
+      showToast(err.message || 'Error rejecting request', 'error');
+    } finally {
+      setChurchActionLoadingId(null);
     }
   };
 
@@ -603,6 +717,16 @@ export default function AdminDashboard() {
             }`}
           >
             <Users className="w-4 h-4" /> User Management
+          </button>
+          <button
+            onClick={() => setActiveTab('churches')}
+            className={`pb-2 px-1 font-display font-extrabold text-sm border-b-3 -mb-[2px] transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
+              activeTab === 'churches'
+                ? 'border-gazie-navy text-gazie-navy'
+                : 'border-transparent text-gazie-navy/40 hover:text-gazie-navy/70'
+            }`}
+          >
+            <Church className="w-4 h-4" /> ⛪ Church Communities
           </button>
         </div>
 
@@ -1985,6 +2109,258 @@ export default function AdminDashboard() {
 
           </div>
         )}
+
+        {/* ACTIVE TAB: CHURCH COMMUNITIES */}
+        {activeTab === 'churches' && (() => {
+          const pendingBrethren = profiles.filter(
+            p => p.community_verification_status === 'pending' || (p.church_id && p.community_verification_status !== 'community_verified')
+          );
+          const verifiedBrethren = profiles.filter(
+            p => p.community_verification_status === 'community_verified'
+          );
+          const pendingRequests = churchRequests.filter(
+            r => r.status === 'pending' || !r.status
+          );
+
+          return (
+            <div className="space-y-6 animate-fadeIn">
+              
+              {/* 1. Church Management Summary Stats */}
+              <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white border-2 border-gazie-navy rounded-xl p-3.5 text-center shadow-xs">
+                  <Church className="w-5 h-5 text-gazie-navy mx-auto mb-1 opacity-70" />
+                  <span className="font-mono text-xl font-black text-gazie-navy">{adminChurches.length}</span>
+                  <span className="text-[9px] font-bold text-gazie-navy/60 uppercase block">Registered Churches</span>
+                </div>
+
+                <div className="bg-white border-2 border-gazie-navy rounded-xl p-3.5 text-center shadow-xs">
+                  <Users className="w-5 h-5 text-blue-700 mx-auto mb-1" />
+                  <span className="font-mono text-xl font-black text-blue-800">{pendingBrethren.length}</span>
+                  <span className="text-[9px] font-bold text-blue-800/70 uppercase block">Pending Brethren</span>
+                </div>
+
+                <div className="bg-white border-2 border-gazie-navy rounded-xl p-3.5 text-center shadow-xs">
+                  <CheckCircle2 className="w-5 h-5 text-gazie-green mx-auto mb-1" />
+                  <span className="font-mono text-xl font-black text-gazie-green">{verifiedBrethren.length}</span>
+                  <span className="text-[9px] font-bold text-gazie-green uppercase block">Verified Brethren</span>
+                </div>
+
+                <div className="bg-white border-2 border-gazie-navy rounded-xl p-3.5 text-center shadow-xs">
+                  <Sparkles className="w-5 h-5 text-amber-600 mx-auto mb-1" />
+                  <span className="font-mono text-xl font-black text-amber-800">{pendingRequests.length}</span>
+                  <span className="text-[9px] font-bold text-amber-800 uppercase block">Unlisted Requests</span>
+                </div>
+              </section>
+
+              {/* 2. Pending Brethren Verification Queue */}
+              <section className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="border-b border-dashed border-gazie-navy/10 pb-3 flex justify-between items-center">
+                  <div>
+                    <h2 className="font-display font-extrabold text-sm uppercase tracking-wider text-gazie-navy flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-gazie-navy" />
+                      <span>Church Brethren Verification Queue</span>
+                      <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.2 rounded-full font-bold">
+                        {pendingBrethren.length}
+                      </span>
+                    </h2>
+                    <p className="text-[11px] text-gazie-navy/60 mt-0.5">
+                      Confirm members who have affiliated with an Abuja church or home fellowship
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={fetchAdminData}
+                    className="text-xs text-gazie-navy/60 hover:text-gazie-navy flex items-center gap-1 cursor-pointer underline"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Refresh
+                  </button>
+                </div>
+
+                {pendingBrethren.length === 0 ? (
+                  <div className="p-6 bg-gazie-paper/30 border border-dashed border-gazie-navy/20 rounded-xl text-center text-xs text-gazie-navy/60">
+                    No church member verifications currently pending review.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-dashed divide-gazie-navy/10">
+                    {pendingBrethren.map((member) => {
+                      const churchMatch = adminChurches.find(c => c.id === member.church_id);
+                      return (
+                        <div key={member.id} className="py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs text-gazie-navy">{member.full_name}</span>
+                              <span className="text-[10px] text-gazie-navy/60 font-mono">({member.phone || member.email})</span>
+                              <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold border ${
+                                member.verification_status === 'verified'
+                                  ? 'bg-green-50 text-green-700 border-green-200'
+                                  : 'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}>
+                                NIN: {member.verification_status}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-gazie-navy/70">
+                              <span>⛪ <strong>{member.community_name || churchMatch?.name || 'Affiliated Church'}</strong></span>
+                              {member.church_cell_id && (
+                                <span className="bg-purple-50 text-purple-800 px-1.5 py-0.2 rounded text-[9px] font-semibold">
+                                  Cell Member
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                            <button
+                              type="button"
+                              onClick={() => handleApproveChurchMember(member.id)}
+                              disabled={churchActionLoadingId === member.id}
+                              className="bg-[#2D6A4F] hover:bg-emerald-800 text-white font-bold text-xs py-1.5 px-3 rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>{churchActionLoadingId === member.id ? 'Approving...' : 'Verify Brethren'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRejectChurchMember(member.id)}
+                              disabled={churchActionLoadingId === member.id}
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs py-1.5 px-2.5 rounded-lg border border-gray-300 transition cursor-pointer"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              {/* 3. Unlisted Church Requests Queue */}
+              <section className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="border-b border-dashed border-gazie-navy/10 pb-3">
+                  <h2 className="font-display font-extrabold text-sm uppercase tracking-wider text-gazie-navy flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    <span>Unlisted Church Community Submissions</span>
+                    <span className="bg-amber-100 text-amber-900 text-[10px] px-2 py-0.2 rounded-full font-bold">
+                      {pendingRequests.length}
+                    </span>
+                  </h2>
+                  <p className="text-[11px] text-gazie-navy/60 mt-0.5">
+                    Churches and house fellowship centers requested by commuters across Abuja
+                  </p>
+                </div>
+
+                {pendingRequests.length === 0 ? (
+                  <div className="p-6 bg-gazie-paper/30 border border-dashed border-gazie-navy/20 rounded-xl text-center text-xs text-gazie-navy/60">
+                    No unlisted church requests currently waiting for admin review.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-dashed divide-gazie-navy/10">
+                    {pendingRequests.map((req) => (
+                      <div key={req.id} className="py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-gazie-navy">{req.church_name}</span>
+                            <span className="text-[10px] bg-blue-50 text-blue-800 px-2 py-0.2 rounded font-semibold border border-blue-200">
+                              {req.denomination || 'Christian'}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gazie-navy/70">
+                            📍 {req.address || req.city_area || 'Abuja'} • Requested by: {req.contact_person || 'Member'} ({req.contact_phone || req.contact_email || 'No contact'})
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                          <button
+                            type="button"
+                            onClick={() => handleApproveChurchRequest(req)}
+                            disabled={churchActionLoadingId === req.id}
+                            className="bg-gazie-navy text-gazie-paper hover:bg-gazie-yellow hover:text-gazie-navy font-bold text-xs py-1.5 px-3 rounded-lg border border-gazie-navy transition cursor-pointer disabled:opacity-50"
+                          >
+                            <span>{churchActionLoadingId === req.id ? 'Adding...' : 'Approve & Add Church'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRejectChurchRequest(req.id)}
+                            disabled={churchActionLoadingId === req.id}
+                            className="bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs py-1.5 px-2.5 rounded-lg border border-red-200 transition cursor-pointer"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* 4. Active Registered Churches Directory */}
+              <section className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="border-b border-dashed border-gazie-navy/10 pb-3 flex justify-between items-center">
+                  <div>
+                    <h2 className="font-display font-extrabold text-sm uppercase tracking-wider text-gazie-navy flex items-center gap-2">
+                      <Church className="w-4 h-4 text-gazie-navy" />
+                      <span>Active Church Communities Directory ({adminChurches.length})</span>
+                    </h2>
+                    <p className="text-[11px] text-gazie-navy/60 mt-0.5">
+                      Established Abuja ministries with verified carpool hubs and cell hierarchies
+                    </p>
+                  </div>
+                  <Link
+                    href="/church-rides"
+                    className="text-xs font-bold text-gazie-navy hover:text-gazie-green underline"
+                  >
+                    View Discovery Page &rarr;
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {adminChurches.map((church) => (
+                    <div
+                      key={church.id}
+                      className="p-3.5 bg-gazie-paper/30 border border-gazie-navy/15 rounded-xl space-y-2 text-xs"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-bold text-gazie-navy block">{church.name}</span>
+                          <span className="text-[10px] text-gazie-navy/60 block">📍 {church.address}</span>
+                        </div>
+                        <span className="text-[9px] bg-blue-100 text-blue-800 font-bold px-1.5 py-0.2 rounded">
+                          {church.city}
+                        </span>
+                      </div>
+
+                      {church.service_times && church.service_times.length > 0 && (
+                        <div className="flex flex-wrap gap-1 text-[10px] text-gazie-navy/70">
+                          {church.service_times.map((t, i) => (
+                            <span key={i} className="bg-white px-1.5 py-0.5 rounded border border-gazie-navy/10">
+                              ⏰ {t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="pt-1 flex items-center justify-between border-t border-dashed border-gazie-navy/10 text-[11px]">
+                        <Link
+                          href={`/community/church/${church.slug}`}
+                          className="font-bold text-blue-700 hover:underline"
+                        >
+                          Community Hub &rarr;
+                        </Link>
+                        <Link
+                          href={`/church-rides?church=${church.id}`}
+                          className="font-bold text-[#2D6A4F] hover:underline"
+                        >
+                          View Carpools &rarr;
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+            </div>
+          );
+        })()}
       </main>
 
       {/* Document Preview Modal */}

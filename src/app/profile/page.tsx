@@ -5,8 +5,18 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { uploadDocument } from '@/lib/storage';
 import { COMMUNITY_HUBS } from '@/lib/communities';
+import { 
+  getChurches, getChurchZones, getChurchCells, 
+  Church, ChurchZone, ChurchCell, CommunityType, CommunityVerificationStatus 
+} from '@/lib/churches';
+import RequestChurchModal from '@/components/church/RequestChurchModal';
 import Navbar from '@/components/ui/Navbar';
-import { ShieldCheck, Phone, User, Landmark, Car, HeartHandshake, BadgeAlert, ArrowLeft, Mail, FileText, Upload, ShieldAlert, Award, MapPin } from 'lucide-react';
+import { 
+  ShieldCheck, Phone, User, Landmark, Car, HeartHandshake, 
+  BadgeAlert, ArrowLeft, Mail, FileText, Upload, ShieldAlert, 
+  Award, MapPin, Search, Sparkles, CheckCircle2, Clock3, Home, 
+  Church as ChurchIcon, HelpCircle 
+} from 'lucide-react';
 import { STANDARD_COMMUTE_ROUTES } from '@/lib/routes';
 
 export default function ProfilePage() {
@@ -27,6 +37,20 @@ export default function ProfilePage() {
   const [availableTimeWindow, setAvailableTimeWindow] = useState('');
   const [driverFare, setDriverFare] = useState('');
   const [communityName, setCommunityName] = useState('');
+
+  // Church Community & Cell Hierarchy states
+  const [communityType, setCommunityType] = useState<CommunityType>('estate');
+  const [churchId, setChurchId] = useState('');
+  const [churchZoneId, setChurchZoneId] = useState('');
+  const [churchCellId, setChurchCellId] = useState('');
+  const [communityVerificationStatus, setCommunityVerificationStatus] = useState<CommunityVerificationStatus>('unverified');
+  const [communityRole, setCommunityRole] = useState('member');
+
+  const [allChurches, setAllChurches] = useState<Church[]>([]);
+  const [churchZones, setChurchZones] = useState<ChurchZone[]>([]);
+  const [churchCells, setChurchCells] = useState<ChurchCell[]>([]);
+  const [churchSearch, setChurchSearch] = useState('');
+  const [isRequestChurchModalOpen, setIsRequestChurchModalOpen] = useState(false);
 
   // Upload states
   const [riderIdFile, setRiderIdFile] = useState<File | null>(null);
@@ -65,6 +89,15 @@ export default function ProfilePage() {
           setAvailableTimeWindow(data.available_time_window || '');
           setDriverFare(String(data.driver_fare || 0));
           setCommunityName(data.community_name || '');
+
+          // Populate church community attributes
+          const isChurchAffiliated = data.community_type === 'church' || !!data.church_id || (data.community_name && data.community_name.toLowerCase().includes('church'));
+          setCommunityType(isChurchAffiliated ? 'church' : 'estate');
+          setChurchId(data.church_id || '');
+          setChurchZoneId(data.church_zone_id || '');
+          setChurchCellId(data.church_cell_id || '');
+          setCommunityVerificationStatus(data.community_verification_status || 'unverified');
+          setCommunityRole(data.community_role || 'member');
         }
       } catch (err) {
         console.error('Error loading profile:', err);
@@ -74,6 +107,34 @@ export default function ProfilePage() {
     }
     loadProfile();
   }, [router]);
+
+  // Load available churches
+  useEffect(() => {
+    async function loadChurches() {
+      const list = await getChurches();
+      setAllChurches(list);
+    }
+    loadChurches();
+  }, []);
+
+  // Update zones when church changes
+  useEffect(() => {
+    if (churchId) {
+      getChurchZones(churchId).then(setChurchZones);
+    } else {
+      setChurchZones([]);
+    }
+  }, [churchId]);
+
+  // Update cells when church or zone changes
+  useEffect(() => {
+    if (churchId) {
+      getChurchCells(churchId, churchZoneId || undefined).then(setChurchCells);
+    } else {
+      setChurchCells([]);
+    }
+  }, [churchId, churchZoneId]);
+
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,11 +176,39 @@ export default function ProfilePage() {
         currentLicUrl = url;
       }
 
+      // Construct church / community name
+      let finalCommunityName = communityName.trim() || null;
+      if (communityType === 'church' && churchId) {
+        const matchedChurch = allChurches.find(c => c.id === churchId);
+        const matchedCell = churchCells.find(c => c.id === churchCellId);
+        if (matchedChurch) {
+          finalCommunityName = matchedCell 
+            ? `${matchedChurch.name} (${matchedCell.name})`
+            : matchedChurch.name;
+        }
+      }
+
+      // Check if community status should transition to pending
+      let nextCommunityStatus = communityVerificationStatus;
+      if (communityType === 'church' && churchId) {
+        if (communityVerificationStatus !== 'community_verified' && communityVerificationStatus !== 'admin_verified') {
+          nextCommunityStatus = 'pending';
+        }
+      } else if (communityType === 'estate') {
+        nextCommunityStatus = 'unverified';
+      }
+
       const updateData: any = {
         full_name: fullName,
         id_url: currentIdUrl,
         proof_of_address_url: currentProofUrl,
-        community_name: communityName.trim() || null
+        community_name: finalCommunityName,
+        community_type: communityType,
+        church_id: communityType === 'church' ? (churchId || null) : null,
+        church_zone_id: communityType === 'church' ? (churchZoneId || null) : null,
+        church_cell_id: communityType === 'church' ? (churchCellId || null) : null,
+        community_verification_status: nextCommunityStatus,
+        community_role: communityRole
       };
 
       if (profile.role === 'rider') {
@@ -149,16 +238,23 @@ export default function ProfilePage() {
         .update(updateData)
         .eq('id', user.id);
 
-      // Graceful fallback if community_name column does not exist in live Supabase DB
-      if (error && (error.code === '42703' || error.message?.includes('community_name'))) {
-        console.warn('community_name column not found in database, retrying update without it:', error.message);
-        delete updateData.community_name;
+      // Graceful fallback if church or community columns do not exist in live Supabase DB
+      if (error && (error.code === '42703' || error.message?.includes('church_id') || error.message?.includes('community_type') || error.message?.includes('community_name'))) {
+        console.warn('Extended community columns not yet migrated in Supabase, retrying with core columns:', error.message);
+        delete updateData.church_id;
+        delete updateData.church_zone_id;
+        delete updateData.church_cell_id;
+        delete updateData.community_type;
+        delete updateData.community_verification_status;
+        delete updateData.community_role;
+        
         const retry = await supabase
           .from('profiles')
           .update(updateData)
           .eq('id', user.id);
         error = retry.error;
       }
+
 
       if (error) {
         setMessage({ text: error.message, isError: true });
@@ -205,6 +301,33 @@ export default function ProfilePage() {
         return <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full text-[10px] font-bold">PENDING EMAIL</span>;
     }
   };
+
+  const getCommunityVerificationBadge = () => {
+    if (communityType !== 'church' && !churchId && (!communityName || !communityName.toLowerCase().includes('church'))) {
+      return null;
+    }
+
+    if (communityVerificationStatus === 'community_verified' || communityVerificationStatus === 'admin_verified') {
+      return (
+        <span className="bg-[#2D6A4F] text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 shadow-xs">
+          <span>⛪</span> Community Verified ✓
+        </span>
+      );
+    }
+    if (communityVerificationStatus === 'pending') {
+      return (
+        <span className="bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1">
+          <Clock3 className="w-3 h-3 text-amber-700" /> Pending Cell Approval
+        </span>
+      );
+    }
+    return (
+      <span className="bg-gray-100 text-gray-700 border border-gray-300 px-2 py-0.5 rounded-full text-[10px] font-bold">
+        Church Unverified
+      </span>
+    );
+  };
+
 
   return (
     <div className="flex flex-col min-h-screen bg-gazie-paper text-gazie-navy">
@@ -280,7 +403,10 @@ export default function ProfilePage() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-display font-extrabold text-base leading-none">{profile?.full_name}</h2>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                 {getVerificationStatusLabel()}
+                {getCommunityVerificationBadge()}
               </div>
               <p className="text-xs font-mono text-gazie-navy/60 mt-1">Phone: {profile?.phone}</p>
               <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-gazie-yellow bg-gazie-navy px-2 py-0.5 rounded-full inline-block mt-1.5">
@@ -314,30 +440,210 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Community / Faith Hub Affiliation */}
-            <div className="space-y-1">
+            {/* Community Affiliation Section */}
+            <div className="space-y-3 pt-2 border-t border-dashed border-gazie-navy/10 text-left">
               <div className="flex justify-between items-center">
                 <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">
-                  Church / Community Hub <span className="font-normal lowercase text-gazie-navy/50">(optional)</span>
+                  Community Affiliation
                 </label>
-                <span className="text-[9px] text-[#2D6A4F] font-bold">Trusted Community</span>
+                <span className="text-[9px] text-[#2D6A4F] font-bold">Trusted Commuting Circle</span>
               </div>
-              <select
-                value={communityName}
-                onChange={(e) => setCommunityName(e.target.value)}
-                className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold cursor-pointer"
-              >
-                <option value="">🌟 General Abuja Commuter (Open to All Corridors)</option>
-                {COMMUNITY_HUBS.map((hub) => (
-                  <option key={hub.id} value={hub.shortName}>
-                    {hub.icon} {hub.shortName} — {hub.landmark}
-                  </option>
-                ))}
-              </select>
-              <p className="text-[10px] text-gazie-navy/50">
-                Select your fellowship or parish to display a community trust badge on your ride passes.
-              </p>
+
+              {/* Community Type Switcher Tabs */}
+              <div className="grid grid-cols-2 gap-1.5 p-1 bg-gazie-paper/50 border border-gazie-navy/20 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setCommunityType('estate')}
+                  className={`py-1.5 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    communityType === 'estate'
+                      ? 'bg-gazie-navy text-white shadow-xs'
+                      : 'text-gazie-navy/70 hover:text-gazie-navy'
+                  }`}
+                >
+                  <Home className="w-3.5 h-3.5" />
+                  <span>Residential Estate</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCommunityType('church')}
+                  className={`py-1.5 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    communityType === 'church'
+                      ? 'bg-[#2D6A4F] text-white shadow-xs'
+                      : 'text-gazie-navy/70 hover:text-[#2D6A4F]'
+                  }`}
+                >
+                  <ChurchIcon className="w-3.5 h-3.5" />
+                  <span>Church Community</span>
+                </button>
+              </div>
+
+              {/* Estate / Corridor Selection */}
+              {communityType === 'estate' && (
+                <div className="space-y-2 p-3 bg-white border border-gazie-navy/15 rounded-xl animate-fadeIn">
+                  <label className="text-[10px] font-bold text-gazie-navy/70 uppercase block">
+                    Estate / Corridor Hub
+                  </label>
+                  <select
+                    value={communityName}
+                    onChange={(e) => setCommunityName(e.target.value)}
+                    className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold cursor-pointer"
+                  >
+                    <option value="">🌟 General Abuja Commuter (Open to All Corridors)</option>
+                    {COMMUNITY_HUBS.filter(h => h.type !== 'church').map((hub) => (
+                      <option key={hub.id} value={hub.shortName}>
+                        {hub.icon} {hub.shortName} — {hub.landmark}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-gazie-navy/60">
+                    Connect with neighbors travelling along your primary residential corridor.
+                  </p>
+                </div>
+              )}
+
+              {/* Church Community Hierarchy Selection */}
+              {communityType === 'church' && (
+                <div className="space-y-3 p-3.5 bg-[#2D6A4F]/5 border border-[#2D6A4F]/25 rounded-xl text-left animate-fadeIn">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#2D6A4F] flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> Select Your Church & Cell Group
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsRequestChurchModalOpen(true)}
+                      className="text-[10px] text-[#2D6A4F] underline hover:opacity-80 font-bold cursor-pointer"
+                    >
+                      + Request Unlisted Church
+                    </button>
+                  </div>
+
+                  {/* Church search & select */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                      1. Select Church / Parish *
+                    </label>
+                    <div className="relative mb-1">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gazie-navy/40" />
+                      <input
+                        type="text"
+                        placeholder="Search church name..."
+                        value={churchSearch}
+                        onChange={(e) => setChurchSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 bg-white border border-gazie-navy/25 rounded-lg text-xs font-semibold placeholder:text-gazie-navy/40"
+                      />
+                    </div>
+                    <select
+                      value={churchId}
+                      onChange={(e) => {
+                        const cid = e.target.value;
+                        setChurchId(cid);
+                        setChurchZoneId('');
+                        setChurchCellId('');
+                        const selected = allChurches.find(c => c.id === cid);
+                        if (selected) setCommunityName(selected.name);
+                      }}
+                      className="w-full px-3 py-2 bg-white border border-gazie-navy rounded-xl text-xs font-semibold cursor-pointer focus:outline-none focus:border-gazie-yellow"
+                    >
+                      <option value="">-- Choose your Church --</option>
+                      {allChurches
+                        .filter(c => !churchSearch || c.name.toLowerCase().includes(churchSearch.toLowerCase()) || (c.denomination && c.denomination.toLowerCase().includes(churchSearch.toLowerCase())))
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.icon} {c.name} {c.denomination ? `(${c.denomination})` : ''}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  {/* Church Zone */}
+                  {churchId && (
+                    <div className="space-y-1 animate-fadeIn">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                        2. Church Zone / District (Optional)
+                      </label>
+                      <select
+                        value={churchZoneId}
+                        onChange={(e) => {
+                          setChurchZoneId(e.target.value);
+                          setChurchCellId('');
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-gazie-navy rounded-xl text-xs font-semibold cursor-pointer focus:outline-none focus:border-gazie-yellow"
+                      >
+                        <option value="">-- All Zones / Select Zone --</option>
+                        {churchZones.map((z) => (
+                          <option key={z.id} value={z.id}>
+                            📍 {z.name} ({z.area})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Church Cell / Fellowship */}
+                  {churchId && (
+                    <div className="space-y-1 animate-fadeIn">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                        3. Cell / Home Fellowship Group (Optional)
+                      </label>
+                      <select
+                        value={churchCellId}
+                        onChange={(e) => setChurchCellId(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-gazie-navy rounded-xl text-xs font-semibold cursor-pointer focus:outline-none focus:border-gazie-yellow"
+                      >
+                        <option value="">-- Select Your Cell Group --</option>
+                        {churchCells.map((cl) => (
+                          <option key={cl.id} value={cl.id}>
+                            🏡 {cl.name} — {cl.location}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Selected Cell Preview Card */}
+                  {churchCellId && (() => {
+                    const selCell = churchCells.find(c => c.id === churchCellId);
+                    if (!selCell) return null;
+                    return (
+                      <div className="p-2.5 bg-white border border-[#2D6A4F]/30 rounded-xl space-y-1 text-xs animate-fadeIn shadow-2xs">
+                        <div className="flex items-center justify-between text-[#2D6A4F] font-bold">
+                          <span>🏡 {selCell.name}</span>
+                          <span className="text-[9px] bg-[#2D6A4F]/10 px-1.5 py-0.5 rounded font-mono font-bold">
+                            {selCell.meeting_day || 'Wednesdays'} {selCell.meeting_time || '6:00 PM'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gazie-navy/80">
+                          <strong>Location:</strong> {selCell.location}
+                        </p>
+                        {selCell.leader_name && (
+                          <p className="text-[10px] text-gazie-navy/60">
+                            <strong>Cell Leader:</strong> {selCell.leader_name}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Community Verification Status Callout */}
+                  <div className="pt-1 text-[11px] text-gazie-navy/70 leading-relaxed border-t border-dashed border-[#2D6A4F]/20">
+                    {communityVerificationStatus === 'community_verified' || communityVerificationStatus === 'admin_verified' ? (
+                      <p className="text-[#2D6A4F] font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> You are a Community Verified member of this church/cell.
+                      </p>
+                    ) : communityVerificationStatus === 'pending' ? (
+                      <p className="text-amber-800 font-bold flex items-center gap-1">
+                        <Clock3 className="w-3.5 h-3.5" /> Your membership request is pending verification by your cell leader or admin.
+                      </p>
+                    ) : (
+                      <p className="text-gazie-navy/70">
+                        🛡️ Joining this church group will submit your profile to your cell leader for community verification.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
+
 
             {/* Rider specific */}
             {profile?.role === 'rider' && (
@@ -578,7 +884,18 @@ export default function ProfilePage() {
             </p>
           </div>
         </div>
+
+        {/* Request Church Modal */}
+        <RequestChurchModal
+          isOpen={isRequestChurchModalOpen}
+          onClose={() => setIsRequestChurchModalOpen(false)}
+          userId={profile?.id}
+          onSuccess={() => {
+            setMessage({ text: 'Church addition request submitted to admin for review!', isError: false });
+          }}
+        />
       </main>
     </div>
   );
 }
+

@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase, syncRecurringPostings, confirmMatch, isMock } from '@/lib/supabase';
 import Navbar from '@/components/ui/Navbar';
 import Ticket from '@/components/ui/Ticket';
 import Toast, { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { MapPin, Clock, Calendar, AlertTriangle, ShieldAlert, Phone, Bell, CheckSquare, Search, Sparkles, UserCheck, ArrowRight, FileText } from 'lucide-react';
+import { MapPin, Clock, Calendar, AlertTriangle, ShieldAlert, Phone, Bell, CheckSquare, Search, Sparkles, UserCheck, ArrowRight, FileText, Church, Users } from 'lucide-react';
 import Script from 'next/script';
 import VerificationModal from '@/components/ui/VerificationModal';
 import RatingModal from '@/components/ui/RatingModal';
@@ -835,6 +836,34 @@ export default function RiderDashboard() {
           </button>
         </div>
 
+        {/* Church Community Fellowship Banner */}
+        <div className="bg-gradient-to-r from-blue-50 to-emerald-50 border-2 border-emerald-400 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">⛪</span>
+              <span className="font-display font-black text-xs uppercase text-emerald-950">
+                {profile?.community_name || 'Church & Fellowship Carpooling'}
+              </span>
+              <span className="text-[9px] bg-emerald-700 text-white font-extrabold px-1.5 py-0.5 rounded uppercase">
+                Free Sunday Pass
+              </span>
+            </div>
+            <p className="text-[10px] text-emerald-900/90 font-medium leading-relaxed">
+              {profile?.church_id 
+                ? 'Share rides to Sunday services and home care cells with verified brethren from your church.'
+                : 'Carpool with brethren from Summit, Dunamis, Winners, COZA, House on the Rock & more. Free platform pass on Sundays!'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={profile?.church_id ? `/church-rides?church=${profile.church_id}` : '/church-rides'}
+              className="bg-[#2D6A4F] hover:bg-emerald-800 text-white font-bold text-[11px] py-1.5 px-3 rounded-xl transition shadow-xs whitespace-nowrap"
+            >
+              Browse Church Rides →
+            </Link>
+          </div>
+        </div>
+
         {/* Notifications Alert Banner */}
         <div className="bg-white border-2 border-gazie-navy rounded-2xl p-4 shadow-sm space-y-2">
           <button
@@ -1038,6 +1067,8 @@ export default function RiderDashboard() {
                         driverPhone={`🚘 ${driver?.vehicle_make || ''} ${driver?.vehicle_model || ''}`}
                         vehicleInfo={`${posting.seats_available} of ${posting.seats_total} seats left`}
                         communityName={posting.community_name}
+                        serviceName={posting.service_name}
+                        ridePurpose={posting.ride_purpose}
                         onSelect={() => handleRequestRidePosting(posting)}
                         selectLabel={
                           isFreeSundayChurchCommute({
