@@ -271,36 +271,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Church & Cell Carpooling Feature Card */}
-        <div className="w-full bg-gradient-to-br from-emerald-50 via-white to-blue-50 border-2 border-[#2D6A4F] rounded-3xl p-5 mb-8 shadow-sm space-y-3 text-left">
-          <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#2D6A4F] text-white">
-              <span>⛪</span>
-              <span>Church & Cell Carpooling</span>
-            </span>
-            <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">
-              Free Sunday Pass (₦0)
-            </span>
-          </div>
-
-          <div>
-            <h3 className="font-display font-extrabold text-base text-gazie-navy">
-              Carpool to Church Services & Home Cell Fellowships
-            </h3>
-            <p className="text-xs text-gazie-navy/70 mt-1 leading-relaxed">
-              Connect with verified brethren travelling from your neighborhood to Summit, Dunamis, Winners, COZA, RCCG, House on the Rock & more.
-            </p>
-          </div>
-
-          <Link
-            href="/church-rides"
-            className="w-full flex items-center justify-center gap-2 bg-[#2D6A4F] hover:bg-emerald-800 text-white font-bold py-2.5 px-4 rounded-xl transition text-xs shadow-xs"
-          >
-            <span>Explore Church Rides & Cells</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
         {/* Live Activity Section */}
         {(() => {
           let tickerText = "Join Gazie Commute for a safer commute today!";

@@ -171,11 +171,11 @@ export default function ChurchCommunityPage({ params }: ChurchCommunityPageProps
             The requested church community could not be found or has not yet been registered on Gazie Commute.
           </p>
           <Link
-            href="/church-rides"
+            href="/dashboard/rider"
             className="inline-flex items-center gap-1.5 bg-gazie-navy text-gazie-paper font-bold text-xs py-2 px-4 rounded-xl"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Browse All Church Rides</span>
+            <span>Browse Commute Feed</span>
           </Link>
         </main>
       </div>
@@ -195,11 +195,11 @@ export default function ChurchCommunityPage({ params }: ChurchCommunityPageProps
         {/* Back navigation */}
         <div className="flex items-center justify-between">
           <Link
-            href="/church-rides"
+            href="/dashboard/rider"
             className="text-xs font-bold text-gazie-navy/70 hover:text-gazie-navy inline-flex items-center gap-1"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>All Church Rides</span>
+            <span>Back to Commute Feed</span>
           </Link>
 
           <button
@@ -254,7 +254,7 @@ export default function ChurchCommunityPage({ params }: ChurchCommunityPageProps
               )}
 
               <Link
-                href={`/church-rides?church=${church.id}`}
+                href={`/dashboard/rider?community=${encodeURIComponent(church.name)}`}
                 className="text-[11px] font-bold text-gazie-navy hover:underline flex items-center gap-1"
               >
                 <span>Find Brethren Rides</span>
@@ -371,7 +371,7 @@ export default function ChurchCommunityPage({ params }: ChurchCommunityPageProps
               </p>
             </div>
             <Link
-              href={`/church-rides?church=${church.id}`}
+              href={`/dashboard/rider?community=${encodeURIComponent(church.name)}`}
               className="text-xs font-bold text-gazie-navy hover:text-gazie-green underline"
             >
               View All
@@ -414,7 +414,7 @@ export default function ChurchCommunityPage({ params }: ChurchCommunityPageProps
                   </div>
                   <div className="pt-2">
                     <Link
-                      href={`/church-rides?church=${church.id}`}
+                      href={`/dashboard/rider?community=${encodeURIComponent(church.name)}`}
                       className="block text-center bg-gazie-navy text-white text-[11px] font-bold py-1.5 rounded-lg hover:bg-gazie-yellow hover:text-gazie-navy transition"
                     >
                       View & Book Seat

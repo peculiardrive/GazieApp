@@ -8,12 +8,71 @@ export interface CommunityHub {
   id: string;
   name: string;
   shortName: string;
-  type: 'church' | 'mosque' | 'campus' | 'workplace';
+  type: 'estate' | 'church' | 'mosque' | 'campus' | 'workplace';
   landmark: string;
   icon: string;
 }
 
 export const COMMUNITY_HUBS: CommunityHub[] = [
+  // Residential Estates & Corridors
+  {
+    id: 'trademore_estate',
+    name: 'TradeMore Estate',
+    shortName: 'TradeMore Estate',
+    type: 'estate',
+    landmark: 'Lugbe / Airport Road, Abuja',
+    icon: '🏡'
+  },
+  {
+    id: 'games_village',
+    name: 'Games Village',
+    shortName: 'Games Village',
+    type: 'estate',
+    landmark: 'Kaura District, Abuja',
+    icon: '🏡'
+  },
+  {
+    id: 'river_park',
+    name: 'River Park Estate',
+    shortName: 'River Park Estate',
+    type: 'estate',
+    landmark: 'Airport Road Corridor, Abuja',
+    icon: '🏡'
+  },
+  {
+    id: 'suncity_lokogoma',
+    name: 'Sun City / Lokogoma',
+    shortName: 'Sun City / Lokogoma',
+    type: 'estate',
+    landmark: 'Lokogoma Expressway, Abuja',
+    icon: '🏡'
+  },
+  {
+    id: 'gwarinpa',
+    name: 'Gwarinpa Estate',
+    shortName: 'Gwarinpa Estate',
+    type: 'estate',
+    landmark: '1st - 6th Avenue, Abuja',
+    icon: '🏡'
+  },
+  {
+    id: 'apo_quarters',
+    name: 'Apo Legislative Quarters',
+    shortName: 'Apo Quarters',
+    type: 'estate',
+    landmark: 'Apo / Zone E, Abuja',
+    icon: '🏡'
+  },
+  {
+    id: 'kubwa',
+    name: 'Kubwa Corridor',
+    shortName: 'Kubwa (PW / Phase 4)',
+    type: 'estate',
+    landmark: 'Kubwa Expressway, Abuja',
+    icon: '🏡'
+  },
+
+  // Faith & Church Communities
   {
     id: 'summit_bible_church',
     name: 'The Summit Bible Church',

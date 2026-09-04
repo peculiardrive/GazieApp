@@ -2306,10 +2306,10 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <Link
-                    href="/church-rides"
+                    href="/dashboard/rider?community=church"
                     className="text-xs font-bold text-gazie-navy hover:text-gazie-green underline"
                   >
-                    View Discovery Page &rarr;
+                    View Commute Feed &rarr;
                   </Link>
                 </div>
 
@@ -2347,7 +2347,7 @@ export default function AdminDashboard() {
                           Community Hub &rarr;
                         </Link>
                         <Link
-                          href={`/church-rides?church=${church.id}`}
+                          href={`/dashboard/rider?community=${encodeURIComponent(church.name)}`}
                           className="font-bold text-[#2D6A4F] hover:underline"
                         >
                           View Carpools &rarr;

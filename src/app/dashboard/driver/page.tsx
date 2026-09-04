@@ -12,9 +12,7 @@ import { MapPin, Clock, Calendar, AlertTriangle, ShieldAlert, BadgeCheck, Car, L
 import VerificationModal from '@/components/ui/VerificationModal';
 import RatingModal from '@/components/ui/RatingModal';
 import { STANDARD_ABUJA_DESTINATIONS, STANDARD_COMMUTE_ROUTES, getKnownDestinations } from '@/lib/routes';
-import { COMMUNITY_HUBS } from '@/lib/communities';
-import { CHURCH_COMMUNITIES_ENABLED } from '@/lib/config';
-import { fetchChurches, fetchChurchZones, fetchChurchCells, ChurchCommunity, ChurchZone, ChurchCell } from '@/lib/churches';
+import { COMMUNITY_HUBS, isSundayDate, isChurchCommunity } from '@/lib/communities';
 
 export default function DriverDashboard() {
   const router = useRouter();
@@ -70,72 +68,6 @@ export default function DriverDashboard() {
   const [isRecurring, setIsRecurring] = useState(false);
   const [postLoading, setPostLoading] = useState(false);
 
-  // Ride Purpose & Church Carpooling state
-  const [ridePurpose, setRidePurpose] = useState<'work_commute' | 'sunday_service' | 'midweek_service' | 'cell_meeting' | 'church_event' | 'other'>('work_commute');
-  const [postChurchId, setPostChurchId] = useState('');
-  const [postChurchZoneId, setPostChurchZoneId] = useState('');
-  const [postChurchCellId, setPostChurchCellId] = useState('');
-  const [postServiceName, setPostServiceName] = useState('');
-  const [postNotes, setPostNotes] = useState('');
-  
-  // Church hierarchy data
-  const [availableChurches, setAvailableChurches] = useState<ChurchCommunity[]>([]);
-  const [availableZones, setAvailableZones] = useState<ChurchZone[]>([]);
-  const [availableCells, setAvailableCells] = useState<ChurchCell[]>([]);
-
-  const handleChurchChange = async (churchId: string) => {
-    setPostChurchId(churchId);
-    setPostChurchZoneId('');
-    setPostChurchCellId('');
-    if (churchId) {
-      const zones = await fetchChurchZones(churchId);
-      setAvailableZones(zones);
-      const selChurch = availableChurches.find(c => c.id === churchId);
-      if (selChurch && (!postDestination || postDestination === 'Secretariat, Garki')) {
-        setPostDestination(selChurch.address || selChurch.name);
-      }
-    } else {
-      setAvailableZones([]);
-      setAvailableCells([]);
-    }
-  };
-
-  const handleZoneChange = async (zoneId: string) => {
-    setPostChurchZoneId(zoneId);
-    setPostChurchCellId('');
-    if (zoneId) {
-      const cells = await fetchChurchCells(zoneId);
-      setAvailableCells(cells);
-    } else {
-      setAvailableCells([]);
-    }
-  };
-
-  const handlePurposeChange = (purpose: any) => {
-    setRidePurpose(purpose);
-    if (purpose === 'sunday_service') {
-      const today = new Date();
-      const dayOfWeek = today.getDay();
-      const daysUntilSunday = dayOfWeek === 0 ? 0 : (7 - dayOfWeek);
-      const targetDate = new Date(today.getTime() + (daysUntilSunday || 7) * 86400000);
-      setPostDate(targetDate.toISOString().split('T')[0]);
-      setPostTime('07:30');
-      setPostFare('0'); // Free recommendation for Sunday
-      if (!postServiceName) setPostServiceName('1st Service');
-      // If user belongs to a church, ensure destination points to it
-      if (postChurchId) {
-        const ch = availableChurches.find(c => c.id === postChurchId);
-        if (ch) setPostDestination(ch.address || ch.name);
-      }
-    } else if (purpose === 'midweek_service') {
-      setPostTime('17:30');
-      if (!postServiceName) setPostServiceName('Midweek Communion Service');
-    } else if (purpose === 'cell_meeting') {
-      setPostTime('17:00');
-      if (!postServiceName) setPostServiceName('House Fellowship');
-    }
-  };
-
   const fetchDriverData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -146,10 +78,6 @@ export default function DriverDashboard() {
 
       // Run template sync on launch
       await syncRecurringPostings();
-
-      // Fetch available churches
-      const churches = await fetchChurches();
-      setAvailableChurches(churches);
 
       // 1. Fetch Profile
       const { data: profileData } = await supabase
@@ -168,20 +96,6 @@ export default function DriverDashboard() {
         }
         if (!postFare) setPostFare(String(profileData.driver_fare || 1000));
         if (!postPickup) setPostPickup(profileData.usual_route?.split(' to ')[0] || '');
-
-        if (profileData.church_id) {
-          setPostChurchId(profileData.church_id);
-          const zones = await fetchChurchZones(profileData.church_id);
-          setAvailableZones(zones);
-          if (profileData.church_zone_id) {
-            setPostChurchZoneId(profileData.church_zone_id);
-            const cells = await fetchChurchCells(profileData.church_zone_id);
-            setAvailableCells(cells);
-          }
-          if (profileData.church_cell_id) {
-            setPostChurchCellId(profileData.church_cell_id);
-          }
-        }
       }
 
       // Fetch active postings
@@ -339,8 +253,9 @@ export default function DriverDashboard() {
       }
 
       // Insert posting
-      const isChurchRide = ridePurpose !== 'work_commute';
-      const selectedChurch = availableChurches.find(c => c.id === postChurchId);
+      const isSunday = isSundayDate(postDate);
+      const isChurchHub = isChurchCommunity(postCommunity) || isChurchCommunity(postDestination);
+      const computedPurpose = isSunday ? 'sunday_service' : (isChurchHub ? 'church_event' : 'work_commute');
 
       const postingPayload: any = {
         driver_id: user.id,
@@ -354,18 +269,11 @@ export default function DriverDashboard() {
         is_recurring: isRecurring,
         recurring_template_id: templateId,
         status: 'active',
-        ride_purpose: ridePurpose,
-        church_id: isChurchRide && postChurchId ? postChurchId : null,
-        church_zone_id: isChurchRide && postChurchZoneId ? postChurchZoneId : null,
-        church_cell_id: isChurchRide && postChurchCellId ? postChurchCellId : null,
-        service_name: isChurchRide && postServiceName ? postServiceName.trim() : null,
-        notes: postNotes ? postNotes.trim() : null
+        ride_purpose: computedPurpose
       };
 
       if (postCommunity && postCommunity.trim()) {
         postingPayload.community_name = postCommunity.trim();
-      } else if (isChurchRide && selectedChurch) {
-        postingPayload.community_name = selectedChurch.name;
       }
 
       let { data: newPosting, error: postError } = await supabase
@@ -812,134 +720,6 @@ export default function DriverDashboard() {
               </div>
 
               <form onSubmit={handlePostRide} className="space-y-4">
-                {/* Commute Purpose Selector */}
-                <div className="space-y-2 bg-gazie-paper/30 p-3.5 rounded-xl border border-gazie-navy/10">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">
-                      Commute Category
-                    </label>
-                    <span className="text-[10px] text-gazie-navy/50 font-semibold">Select purpose</span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                    {[
-                      { id: 'work_commute', label: '💼 Work / Daily' },
-                      { id: 'sunday_service', label: '⛪ Sunday Service' },
-                      { id: 'midweek_service', label: '📖 Midweek Service' },
-                      { id: 'cell_meeting', label: '👥 Cell / Fellowship' },
-                      { id: 'church_event', label: '🎪 Church Event' },
-                    ].map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => handlePurposeChange(p.id)}
-                        className={`text-[10px] py-1.5 px-2 rounded-lg border font-bold transition-all text-center cursor-pointer ${
-                          ridePurpose === p.id
-                            ? 'bg-gazie-navy text-gazie-paper border-gazie-navy shadow-xs'
-                            : 'bg-white text-gazie-navy/75 border-gazie-navy/20 hover:border-gazie-navy/40 hover:bg-white'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {ridePurpose === 'sunday_service' && (
-                    <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-lg text-[10px] text-emerald-950 font-semibold flex items-center justify-between mt-1.5">
-                      <span className="flex items-center gap-1.5">
-                        <span>✨</span>
-                        <span>Sunday Church Carpool (Eligible for Free Platform Unlock)</span>
-                      </span>
-                      <span className="font-extrabold uppercase text-[9px] bg-emerald-700 text-white px-2 py-0.5 rounded">Promo</span>
-                    </div>
-                  )}
-                  {ridePurpose === 'cell_meeting' && (
-                    <div className="p-2 bg-purple-50 border border-purple-200 rounded-lg text-[10px] text-purple-900 font-semibold mt-1">
-                      👥 Carpooling with your neighborhood cell group or home fellowship cluster.
-                    </div>
-                  )}
-                </div>
-
-                {/* Church Specific Details (Visible if church purpose selected) */}
-                {ridePurpose !== 'work_commute' && (
-                  <div className="p-3.5 bg-blue-50/70 border-2 border-blue-200 rounded-xl space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-display font-black text-xs text-blue-950 uppercase flex items-center gap-1.5">
-                        <Church className="w-3.5 h-3.5 text-blue-800" />
-                        Church Fellowship Hub
-                      </span>
-                      <span className="text-[9px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
-                        Church Verified
-                      </span>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-blue-950 block">Select Church</label>
-                      <select
-                        value={postChurchId}
-                        onChange={(e) => handleChurchChange(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl text-xs font-semibold text-gazie-navy focus:outline-none focus:border-blue-600 cursor-pointer"
-                      >
-                        <option value="">Select Church Community...</option>
-                        {availableChurches.map((ch) => (
-                          <option key={ch.id} value={ch.id}>
-                            {ch.name} ({ch.city})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {postChurchId && availableZones.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-[11px] font-bold text-blue-950 block">Church Zone</label>
-                          <select
-                            value={postChurchZoneId}
-                            onChange={(e) => handleZoneChange(e.target.value)}
-                            className="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl text-xs font-semibold text-gazie-navy focus:outline-none focus:border-blue-600 cursor-pointer"
-                          >
-                            <option value="">Select Zone / District (Optional)...</option>
-                            {availableZones.map((z) => (
-                              <option key={z.id} value={z.id}>
-                                {z.name} ({z.city_area})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="text-[11px] font-bold text-blue-950 block">Cell / Fellowship</label>
-                          <select
-                            value={postChurchCellId}
-                            onChange={(e) => setPostChurchCellId(e.target.value)}
-                            disabled={!postChurchZoneId || availableCells.length === 0}
-                            className="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl text-xs font-semibold text-gazie-navy focus:outline-none focus:border-blue-600 disabled:opacity-50 cursor-pointer"
-                          >
-                            <option value="">Select Cell / Care Group (Optional)...</option>
-                            {availableCells.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.name} ({c.meeting_day})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center">
-                        <label className="text-[11px] font-bold text-blue-950 block">Service / Meeting Time</label>
-                        <span className="text-[9px] text-blue-800/70 font-semibold">e.g. 1st Service</span>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="e.g. 1st Service (8:00 AM), Midweek Communion, or House Fellowship"
-                        value={postServiceName}
-                        onChange={(e) => setPostServiceName(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl text-xs font-semibold text-gazie-navy focus:outline-none focus:border-blue-600"
-                      />
-                    </div>
-                  </div>
-                )}
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Pickup Area / Departure Landmark</label>
                   <div className="relative">
@@ -980,7 +760,7 @@ export default function DriverDashboard() {
 
                   {/* Quick Select Destination Pills */}
                   <div className="flex flex-wrap gap-1 pt-1">
-                    {['Berger', 'Federal Secretariat', 'Wuse II', 'Area 1', 'Area 10', 'Area 11', 'Banex Plaza', 'Gudu', 'Airport Road', 'Dunamis'].map((hub) => (
+                    {['Federal Secretariat', 'Berger', 'Wuse II', 'Banex Plaza', 'Area 1', 'TradeMore', 'Games Village', 'Gwarinpa', 'Summit Bible', 'Dunamis'].map((hub) => (
                       <button
                         type="button"
                         key={hub}
@@ -1071,7 +851,7 @@ export default function DriverDashboard() {
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">
-                      Community / Service Tag <span className="font-normal lowercase text-gazie-navy/50">(optional)</span>
+                      Community / Faith Tag <span className="font-normal lowercase text-gazie-navy/50">(optional)</span>
                     </label>
                     <span className="text-[9px] text-[#2D6A4F] font-bold">Verified Community Match</span>
                   </div>
@@ -1081,11 +861,27 @@ export default function DriverDashboard() {
                     className="w-full px-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none focus:border-gazie-yellow cursor-pointer"
                   >
                     <option value="">🌟 General Commute (Open to All Verified Commuters)</option>
-                    {COMMUNITY_HUBS.map((hub) => (
-                      <option key={hub.id} value={hub.shortName}>
-                        {hub.icon} {hub.shortName} ({hub.type === 'church' ? 'Service/Fellowship' : 'Hub'})
-                      </option>
-                    ))}
+                    <optgroup label="Residential Estates">
+                      {COMMUNITY_HUBS.filter(h => h.type === 'estate').map((hub) => (
+                        <option key={hub.id} value={hub.shortName}>
+                          {hub.icon} {hub.shortName} ({hub.landmark})
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Churches & Faith Fellowships">
+                      {COMMUNITY_HUBS.filter(h => h.type === 'church').map((hub) => (
+                        <option key={hub.id} value={hub.shortName}>
+                          {hub.icon} {hub.shortName} ({hub.landmark})
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Workplaces & Public Centers">
+                      {COMMUNITY_HUBS.filter(h => h.type !== 'estate' && h.type !== 'church').map((hub) => (
+                        <option key={hub.id} value={hub.shortName}>
+                          {hub.icon} {hub.shortName} ({hub.landmark})
+                        </option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
 

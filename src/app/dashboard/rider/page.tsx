@@ -371,6 +371,24 @@ export default function RiderDashboard() {
 
   useEffect(() => {
     fetchRiderData();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const commParam = params.get('community');
+      if (commParam) {
+        const match = COMMUNITY_HUBS.find(h => 
+          h.id.toLowerCase() === commParam.toLowerCase() ||
+          h.shortName.toLowerCase().includes(commParam.toLowerCase())
+        );
+        if (match) {
+          setSelectedCommunity(match.shortName);
+        } else if (commParam === 'church') {
+          const firstChurch = COMMUNITY_HUBS.find(h => h.type === 'church');
+          if (firstChurch) setSelectedCommunity(firstChurch.shortName);
+        } else {
+          setSelectedCommunity(commParam);
+        }
+      }
+    }
   }, [router]);
 
   const handleCreateBooking = async (e: React.FormEvent) => {
@@ -761,7 +779,15 @@ export default function RiderDashboard() {
     const routeMatch = searchDest === 'all' || post.destination === searchDest;
     const dateMatch = !searchDate || post.departure_date === searchDate;
     const activeMatch = post.status === 'active' && post.seats_available > 0;
-    const communityMatch = selectedCommunity === 'all' || post.community_name === selectedCommunity;
+    
+    let communityMatch = true;
+    if (selectedCommunity !== 'all') {
+      const sel = selectedCommunity.toLowerCase();
+      const pComm = (post.community_name || '').toLowerCase();
+      const pDest = (post.destination || '').toLowerCase();
+      const pPick = (post.pickup || '').toLowerCase();
+      communityMatch = pComm === sel || pComm.includes(sel) || pDest.includes(sel) || pPick.includes(sel);
+    }
     return routeMatch && dateMatch && activeMatch && communityMatch;
   });
 
@@ -834,34 +860,6 @@ export default function RiderDashboard() {
           >
             🎟️ My Passes & Profile
           </button>
-        </div>
-
-        {/* Church Community Fellowship Banner */}
-        <div className="bg-gradient-to-r from-blue-50 to-emerald-50 border-2 border-emerald-400 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1.5">
-              <span className="text-base">⛪</span>
-              <span className="font-display font-black text-xs uppercase text-emerald-950">
-                {profile?.community_name || 'Church & Fellowship Carpooling'}
-              </span>
-              <span className="text-[9px] bg-emerald-700 text-white font-extrabold px-1.5 py-0.5 rounded uppercase">
-                Free Sunday Pass
-              </span>
-            </div>
-            <p className="text-[10px] text-emerald-900/90 font-medium leading-relaxed">
-              {profile?.church_id 
-                ? 'Share rides to Sunday services and home care cells with verified brethren from your church.'
-                : 'Carpool with brethren from Summit, Dunamis, Winners, COZA, House on the Rock & more. Free platform pass on Sundays!'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href={profile?.church_id ? `/church-rides?church=${profile.church_id}` : '/church-rides'}
-              className="bg-[#2D6A4F] hover:bg-emerald-800 text-white font-bold text-[11px] py-1.5 px-3 rounded-xl transition shadow-xs whitespace-nowrap"
-            >
-              Browse Church Rides →
-            </Link>
-          </div>
         </div>
 
         {/* Notifications Alert Banner */}
@@ -987,7 +985,7 @@ export default function RiderDashboard() {
                 <div className="space-y-1.5 pt-2 border-t border-dashed border-gazie-navy/10 sm:col-span-2">
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70">
-                      ⛪ Faith & Community Hubs <span className="font-normal text-[9px] text-gazie-navy/40">(Optional)</span>
+                      🏘️ Estates & Faith Communities <span className="font-normal text-[9px] text-gazie-navy/40">(Optional)</span>
                     </span>
                     {selectedCommunity !== 'all' && (
                       <button
