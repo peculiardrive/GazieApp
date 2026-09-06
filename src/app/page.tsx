@@ -171,87 +171,73 @@ export default function Home() {
           </p>
         </div>
 
-        {/* The Two Essential Actions: Driver vs Rider */}
-        <div className="w-full grid grid-cols-1 gap-4 mb-6">
-          
-          {/* Driver Card: Share Empty Seats */}
-          <div className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-md relative overflow-hidden text-left hover:border-gazie-yellow transition group">
-            <div className="flex items-center justify-between gap-2 border-b border-dashed border-gazie-navy/15 pb-2.5 mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gazie-yellow border border-gazie-navy flex items-center justify-center text-sm font-bold shadow-xs">
-                  🚗
-                </div>
-                <div>
-                  <span className="font-mono text-[9px] font-black uppercase text-gazie-navy/60 tracking-wider block">
-                    Car Owner / Driver
-                  </span>
-                  <h3 className="font-display font-black text-sm text-gazie-navy leading-snug">
-                    Share your empty seats with verified commuters on your route.
-                  </h3>
-                </div>
-              </div>
-              <span className="text-[10px] font-mono font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] px-2 py-0.5 rounded-full border border-[#2D6A4F]/20">
-                Offset Fuel Costs
-              </span>
-            </div>
-
-            <p className="text-xs text-gazie-navy/75 leading-relaxed mb-3 font-medium">
-              Driving from Lugbe, TradeMore, or Airport Road to CBD/Secretariat tomorrow? Share your empty seats with verified neighbors on your schedule.
-            </p>
-
-            <div className="flex flex-wrap gap-1.5 mb-4 text-[10px] font-mono font-semibold text-gazie-navy/70">
-              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ Set your route & time</span>
-              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ Up to 4 seats</span>
-              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ Cash/Transfer directly</span>
-            </div>
-
-            <Link
-              href="/login?role=driver"
-              className="w-full flex items-center justify-center gap-2 bg-gazie-navy text-gazie-paper font-bold py-3 px-4 rounded-xl border-2 border-gazie-navy hover:bg-gazie-yellow hover:text-gazie-navy transition-all duration-200 shadow-sm cursor-pointer text-xs uppercase tracking-wider font-display"
-            >
-              Share Your Empty Seats <ArrowRight className="w-4 h-4" />
-            </Link>
+        {/* The Two Essential Actions: Driver vs Rider Grouped Together */}
+        <div className="w-full bg-white border-2 border-gazie-navy rounded-2xl p-4 sm:p-5 shadow-md mb-6 text-left">
+          <div className="flex items-center justify-between border-b border-dashed border-gazie-navy/15 pb-2.5 mb-4">
+            <span className="font-mono text-[10px] font-black uppercase text-gazie-navy/60 tracking-wider">
+              Choose your commute mode
+            </span>
+            <span className="text-[9px] font-mono font-bold bg-gazie-yellow/30 text-gazie-navy px-2 py-0.5 rounded-full border border-gazie-navy/20">
+              Lugbe Pilot Corridor
+            </span>
           </div>
 
-          {/* Rider Card: Find a Verified Driver */}
-          <div className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-md relative overflow-hidden text-left hover:border-gazie-yellow transition group">
-            <div className="flex items-center justify-between gap-2 border-b border-dashed border-gazie-navy/15 pb-2.5 mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-gazie-paper border border-gazie-navy flex items-center justify-center text-sm font-bold shadow-xs">
-                  👋
-                </div>
-                <div>
-                  <span className="font-mono text-[9px] font-black uppercase text-gazie-navy/60 tracking-wider block">
-                    Daily Commuter / Passenger
-                  </span>
-                  <h3 className="font-display font-black text-sm text-gazie-navy leading-snug">
-                    Find a verified ride going your way.
-                  </h3>
-                </div>
-              </div>
-              <span className="text-[10px] font-mono font-bold bg-gazie-yellow/30 text-gazie-navy px-2 py-0.5 rounded-full border border-gazie-navy/20">
-                Book Day Before
-              </span>
-            </div>
-
-            <p className="text-xs text-gazie-navy/75 leading-relaxed mb-3 font-medium">
-              Heading to work at Secretariat, Berger, or Central Area? Find a verified private driver travelling your direction and lock in your seat the evening before.
-            </p>
-
-            <div className="flex flex-wrap gap-1.5 mb-4 text-[10px] font-mono font-semibold text-gazie-navy/70">
-              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ Verified community drivers</span>
-              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ No rush-hour price surge</span>
-              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ Guaranteed seat</span>
-            </div>
-
+          {/* The Two Primary Action Buttons - Grouped Close Together */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            {/* Rider Button */}
             <Link
               href="/login?role=rider"
-              className="w-full flex items-center justify-center gap-2 bg-gazie-yellow text-gazie-navy border-2 border-gazie-navy font-bold py-3 px-4 rounded-xl hover:bg-gazie-navy hover:text-gazie-paper transition-all duration-200 shadow-sm cursor-pointer text-xs uppercase tracking-wider font-display"
+              className="flex items-center justify-between sm:flex-col sm:justify-center gap-2 bg-gazie-yellow text-gazie-navy border-2 border-gazie-navy font-bold p-3.5 rounded-xl hover:bg-gazie-navy hover:text-gazie-paper transition-all duration-200 shadow-sm cursor-pointer group text-left sm:text-center"
             >
-              Find a Verified Ride <ArrowRight className="w-4 h-4" />
+              <div className="flex items-center gap-2.5 sm:flex-col sm:gap-1">
+                <span className="text-xl">👋</span>
+                <div>
+                  <span className="font-display font-black text-xs sm:text-sm uppercase tracking-wider block">
+                    Find a Verified Ride
+                  </span>
+                  <span className="font-mono text-[10px] text-gazie-navy/70 block group-hover:text-gazie-paper/80 font-normal">
+                    I need a seat to work
+                  </span>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+
+            {/* Driver Button */}
+            <Link
+              href="/login?role=driver"
+              className="flex items-center justify-between sm:flex-col sm:justify-center gap-2 bg-gazie-navy text-gazie-paper border-2 border-gazie-navy font-bold p-3.5 rounded-xl hover:bg-gazie-yellow hover:text-gazie-navy transition-all duration-200 shadow-sm cursor-pointer group text-left sm:text-center"
+            >
+              <div className="flex items-center gap-2.5 sm:flex-col sm:gap-1">
+                <span className="text-xl">🚗</span>
+                <div>
+                  <span className="font-display font-black text-xs sm:text-sm uppercase tracking-wider block">
+                    Share Empty Seats
+                  </span>
+                  <span className="font-mono text-[10px] text-gazie-paper/75 block group-hover:text-gazie-navy/70 font-normal">
+                    I'm driving & want to offset fuel
+                  </span>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
 
+          {/* Quick Details Below the Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-3 border-t border-dashed border-gazie-navy/15 text-[11px]">
+            <div className="bg-gazie-paper/60 p-2.5 rounded-xl border border-gazie-navy/10 space-y-0.5">
+              <span className="font-bold text-gazie-navy block">For Daily Commuters</span>
+              <p className="text-[10px] text-gazie-navy/70 leading-relaxed font-medium">
+                Find a verified ride going your way. Book the day before with fixed community rates and no price surges.
+              </p>
+            </div>
+            <div className="bg-gazie-paper/60 p-2.5 rounded-xl border border-gazie-navy/10 space-y-0.5">
+              <span className="font-bold text-gazie-navy block">For Car Owners</span>
+              <p className="text-[10px] text-gazie-navy/70 leading-relaxed font-medium">
+                Share empty seats with verified commuters on your routine route and offset fuel costs directly.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Active Pilot Corridors Quick-Tap Strip */}
