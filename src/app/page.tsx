@@ -170,12 +170,9 @@ export default function Home() {
 
         {/* The Two Essential Actions: Driver vs Rider Grouped Together */}
         <div className="w-full bg-white border-2 border-gazie-navy rounded-2xl p-4 sm:p-5 shadow-md mb-6 text-left">
-          <div className="flex items-center justify-between border-b border-dashed border-gazie-navy/15 pb-2.5 mb-4">
-            <span className="font-mono text-[10px] font-black uppercase text-gazie-navy/60 tracking-wider">
+          <div className="border-b border-dashed border-gazie-navy/15 pb-2.5 mb-4">
+            <span className="font-mono text-[10px] font-black uppercase text-gazie-navy/60 tracking-wider block">
               Choose your commute mode
-            </span>
-            <span className="text-[9px] font-mono font-bold bg-gazie-yellow/30 text-gazie-navy px-2 py-0.5 rounded-full border border-gazie-navy/20">
-              Lugbe Pilot Corridor
             </span>
           </div>
 
