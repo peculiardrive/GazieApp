@@ -231,7 +231,7 @@ export default function Home() {
             <div className="bg-gazie-paper/60 p-2.5 rounded-xl border border-gazie-navy/10 space-y-0.5">
               <span className="font-bold text-gazie-navy block">For Car Owners</span>
               <p className="text-[10px] text-gazie-navy/70 leading-relaxed font-medium">
-                Share empty seats with verified commuters on your routine route and offset fuel costs directly.
+                Share empty seats with verified commuters on your routine route.
               </p>
             </div>
           </div>
