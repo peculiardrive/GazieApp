@@ -274,6 +274,7 @@ export default function RiderDashboard() {
   const [activeTab, setActiveTab] = useState<'browse' | 'passes'>('browse');
 
   const [allPostings, setAllPostings] = useState<any[]>([]);
+  const [searchPickup, setSearchPickup] = useState('all');
   const [searchDest, setSearchDest] = useState('all');
   const [selectedCommunity, setSelectedCommunity] = useState('all');
   const [showCustomRouteForm, setShowCustomRouteForm] = useState(false);
@@ -423,10 +424,12 @@ export default function RiderDashboard() {
       if (error) {
         setMessage({ text: error.message, isError: true });
       } else {
-        setMessage({ text: 'Ride request submitted successfully! Pending admin match.', isError: false });
+        setMessage({ text: 'Ride request submitted successfully! Your commute pass is shown below.', isError: false });
         setPickup('');
         setDestination('');
+        setShowCustomRouteForm(false);
         fetchRiderData();
+        setActiveTab('passes');
       }
     } catch (err: any) {
       setMessage({ text: err.message || 'An error occurred', isError: true });
@@ -699,6 +702,7 @@ export default function RiderDashboard() {
 
         showToast('Trip request submitted! Your match is confirmed instantly.', 'success');
         fetchRiderData();
+        setActiveTab('passes');
       }
     } catch (err: any) {
       showToast(err.message || 'Error occurred', 'error');
@@ -719,6 +723,7 @@ export default function RiderDashboard() {
       if (data.success) {
         showToast('🎉 Free Sunday Fellowship Pass confirmed! Driver contact unlocked.', 'success');
         fetchRiderData();
+        setActiveTab('passes');
       } else {
         showToast(data.error || 'Unable to unlock free pass', 'error');
       }
@@ -777,6 +782,7 @@ export default function RiderDashboard() {
   // Filter postings based on search params
   const filteredPostings = allPostings.filter(post => {
     const routeMatch = searchDest === 'all' || post.destination === searchDest;
+    const pickupMatch = searchPickup === 'all' || (post.pickup || '').toLowerCase().includes(searchPickup.toLowerCase());
     const dateMatch = !searchDate || post.departure_date === searchDate;
     const activeMatch = post.status === 'active' && post.seats_available > 0;
     
@@ -788,7 +794,7 @@ export default function RiderDashboard() {
       const pPick = (post.pickup || '').toLowerCase();
       communityMatch = pComm === sel || pComm.includes(sel) || pDest.includes(sel) || pPick.includes(sel);
     }
-    return routeMatch && dateMatch && activeMatch && communityMatch;
+    return routeMatch && pickupMatch && dateMatch && activeMatch && communityMatch;
   });
 
   return (
@@ -927,6 +933,60 @@ export default function RiderDashboard() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Pickup Corridor Filter */}
+                <div className="space-y-1.5 sm:col-span-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                      Pickup Corridor / Landmark
+                    </label>
+                    <span className="text-[9px] text-[#2D6A4F] font-bold">Lugbe Pilot Focus</span>
+                  </div>
+                  <div className="relative flex items-center">
+                    <MapPin className="absolute left-3 w-4 h-4 text-gazie-navy/40 pointer-events-none" />
+                    <select
+                      value={searchPickup}
+                      onChange={(e) => setSearchPickup(e.target.value)}
+                      className="w-full pl-9 pr-8 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold cursor-pointer appearance-none"
+                    >
+                      <option value="all">🌟 All Pickups (Lugbe, Airport Road & Environs)</option>
+                      <option value="Lugbe">📍 All Lugbe Hubs</option>
+                      <option value="Lugbe Federal Housing">📍 Lugbe Federal Housing</option>
+                      <option value="TradeMore">📍 TradeMore Estate</option>
+                      <option value="Airport Road">📍 Airport Road Corridor</option>
+                      <option value="Pyakasa">📍 Pyakasa / Lugbe</option>
+                      <option value="Voice of Nigeria">📍 Voice of Nigeria (VON)</option>
+                    </select>
+                    <div className="absolute right-3 pointer-events-none border-l border-gazie-navy/20 pl-2">
+                      <ArrowRight className="w-3.5 h-3.5 text-gazie-navy/50 rotate-90" />
+                    </div>
+                  </div>
+
+                  {/* Quick Filter Chips for Pickup */}
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {[
+                      { id: 'all', label: 'All Pickups' },
+                      { id: 'Lugbe Federal Housing', label: 'Lugbe FHA' },
+                      { id: 'TradeMore', label: 'TradeMore' },
+                      { id: 'Airport Road', label: 'Airport Rd' },
+                      { id: 'Pyakasa', label: 'Pyakasa' }
+                    ].map((chip) => (
+                      <button
+                        type="button"
+                        key={chip.id}
+                        onClick={() => setSearchPickup(chip.id)}
+                        className={`text-[9px] px-2.5 py-0.5 rounded-full border transition cursor-pointer ${
+                          searchPickup === chip.id
+                            ? 'bg-[#2D6A4F] text-white border-[#2D6A4F] font-bold shadow-2xs'
+                            : 'bg-white text-gazie-navy/70 border-gazie-navy/20 hover:border-gazie-navy hover:text-gazie-navy'
+                        }`}
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Destination Filter */}
                 <div className="space-y-1.5 sm:col-span-2">
                   <div className="flex justify-between items-center">
                     <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Route Destination</label>
@@ -951,7 +1011,7 @@ export default function RiderDashboard() {
 
                   {/* Quick Filter Chips */}
                   <div className="flex flex-wrap gap-1 pt-1">
-                    {['all', 'Berger', 'Federal Secretariat', 'Wuse II', 'Area 10', 'Banex Plaza', 'Gudu', 'Dunamis'].map((chip) => (
+                    {['all', 'Federal Secretariat', 'Berger', 'Wuse II', 'Area 10', 'Banex Plaza', 'TradeMore'].map((chip) => (
                       <button
                         type="button"
                         key={chip}
@@ -962,7 +1022,7 @@ export default function RiderDashboard() {
                             : 'bg-white text-gazie-navy/70 border-gazie-navy/20 hover:border-gazie-navy hover:text-gazie-navy'
                         }`}
                       >
-                        {chip === 'all' ? 'All' : chip}
+                        {chip === 'all' ? 'All Dests' : chip}
                       </button>
                     ))}
                   </div>
@@ -1062,8 +1122,8 @@ export default function RiderDashboard() {
                         role="rider"
                         driverName={driver?.full_name || 'Verified Driver'}
                         partnerRating={driver?.rating || 5.0}
-                        driverPhone={`🚘 ${driver?.vehicle_make || ''} ${driver?.vehicle_model || ''}`}
-                        vehicleInfo={`${posting.seats_available} of ${posting.seats_total} seats left`}
+                        driverPhone={undefined}
+                        vehicleInfo={driver?.vehicle_make ? `${driver.vehicle_make} ${driver.vehicle_model || ''} • ${posting.seats_available} seats left`.trim() : `${posting.seats_available} seats left`}
                         communityName={posting.community_name}
                         serviceName={posting.service_name}
                         ridePurpose={posting.ride_purpose}

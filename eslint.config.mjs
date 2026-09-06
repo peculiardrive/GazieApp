@@ -25,6 +25,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "node_modules/**",
+    "marketing/**",
+    "scripts/**",
+    "signup-audit-2026-08-30/**",
   ]),
 ]);
 

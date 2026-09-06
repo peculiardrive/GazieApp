@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { supabase, isMock } from '@/lib/supabase';
 import { ShieldCheck, Car, Users, Calendar, ArrowRight, ShieldAlert, BadgeCheck, Activity } from 'lucide-react';
 import Navbar from '@/components/ui/Navbar';
-import { COMMUNITY_HUBS } from '@/lib/communities';
 
 export default function Home() {
   const [session, setSession] = useState<any>(null);
@@ -153,123 +152,156 @@ export default function Home() {
       <Navbar />
 
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 max-w-lg mx-auto w-full">
-        {/* Danfo Yellow Badge */}
-        <div className="bg-gazie-yellow border-2 border-gazie-navy text-gazie-navy font-bold font-mono text-xs px-3 py-1.5 rounded-full mb-6 uppercase tracking-wider animate-bounce shadow-md">
-          Abuja & Environs Network
+        {/* Pilot Corridor Badge */}
+        <div className="bg-gazie-yellow border-2 border-gazie-navy text-gazie-navy font-bold font-mono text-xs px-3.5 py-1.5 rounded-full mb-5 uppercase tracking-wider shadow-sm flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#2D6A4F] animate-pulse" />
+          <span>Abuja Pilot Corridor • Lugbe & Airport Road</span>
         </div>
 
         {/* Hero Section */}
-        <div className="text-center space-y-4 mb-6">
-          <h1 className="font-display font-extrabold text-4xl leading-tight tracking-tight sm:text-5xl">
-            Commute Together. <br />
-            <span className="bg-gazie-navy text-gazie-paper px-2 py-0.5 rounded inline-block mt-1">
-              Verified & Safe.
+        <div className="text-center space-y-3.5 mb-6">
+          <h1 className="font-display font-extrabold text-3xl sm:text-5xl leading-tight tracking-tight text-gazie-navy">
+            Commute Together from Lugbe. <br />
+            <span className="bg-gazie-navy text-gazie-paper px-2.5 py-0.5 rounded-lg inline-block mt-1">
+              Verified & Fuel-Smart.
             </span>
           </h1>
-          <p className="font-sans text-sm text-gazie-navy/70 leading-relaxed max-w-sm mx-auto">
-            Book shared rides the day before with verified neighbors. No real-time stress, no pricing surprises, direct cash/transfer to drivers.
+          <p className="font-sans text-xs sm:text-sm text-gazie-navy/75 leading-relaxed max-w-md mx-auto font-medium">
+            <strong className="text-gazie-navy font-bold">Not a taxi or on-demand cab app.</strong> Gazie connects verified neighbors already travelling the Lugbe corridor to Central Area & Secretariat so drivers offset fuel and riders commute safely.
           </p>
         </div>
 
-        {/* Teaser Section */}
-        <div className="w-full text-center bg-white border border-gazie-navy/15 rounded-2xl p-4 shadow-sm space-y-2 mb-6">
-          <p className="font-sans text-xs leading-relaxed text-gazie-navy/85 max-w-sm mx-auto">
-            Built on trust, convenience, and community. Gazie Commute connects people travelling the same direction — through estates, workplaces, and shared communities — so riders save on transport and drivers offset their fuel costs.
-          </p>
-          <a href="#about" className="inline-block font-mono text-[10px] font-bold text-gazie-navy underline hover:text-gazie-green transition">
-            Learn more ↓
-          </a>
-        </div>
-
-        {/* Faith & Church Communities Showcase */}
-        <div className="w-full bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-3 mb-6">
-          <div className="flex items-center justify-between border-b border-dashed border-gazie-navy/10 pb-2.5">
-            <div className="flex items-center gap-1.5">
-              <span className="text-base">⛪</span>
-              <h3 className="font-display font-extrabold text-xs sm:text-sm text-gazie-navy uppercase tracking-wider">
-                Community & Church Hubs
-              </h3>
+        {/* The Two Essential Actions: Driver vs Rider */}
+        <div className="w-full grid grid-cols-1 gap-4 mb-6">
+          
+          {/* Driver Card: Share Empty Seats */}
+          <div className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-md relative overflow-hidden text-left hover:border-gazie-yellow transition group">
+            <div className="flex items-center justify-between gap-2 border-b border-dashed border-gazie-navy/15 pb-2.5 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-gazie-yellow border border-gazie-navy flex items-center justify-center text-sm font-bold shadow-xs">
+                  🚗
+                </div>
+                <div>
+                  <span className="font-mono text-[9px] font-black uppercase text-gazie-navy/60 tracking-wider block">
+                    Car Owner / Driver
+                  </span>
+                  <h3 className="font-display font-black text-sm text-gazie-navy leading-snug">
+                    Share your empty seats with verified commuters on your route.
+                  </h3>
+                </div>
+              </div>
+              <span className="text-[10px] font-mono font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] px-2 py-0.5 rounded-full border border-[#2D6A4F]/20">
+                Offset Fuel Costs
+              </span>
             </div>
-            <span className="text-[9px] font-mono font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] px-2.5 py-0.5 rounded-full border border-[#2D6A4F]/20">
-              Verified Community Match
+
+            <p className="text-xs text-gazie-navy/75 leading-relaxed mb-3 font-medium">
+              Driving from Lugbe, TradeMore, or Airport Road to CBD/Secretariat tomorrow? Share your empty seats with verified neighbors on your schedule.
+            </p>
+
+            <div className="flex flex-wrap gap-1.5 mb-4 text-[10px] font-mono font-semibold text-gazie-navy/70">
+              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ Set your route & time</span>
+              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ Up to 4 seats</span>
+              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ Cash/Transfer directly</span>
+            </div>
+
+            <Link
+              href="/login?role=driver"
+              className="w-full flex items-center justify-center gap-2 bg-gazie-navy text-gazie-paper font-bold py-3 px-4 rounded-xl border-2 border-gazie-navy hover:bg-gazie-yellow hover:text-gazie-navy transition-all duration-200 shadow-sm cursor-pointer text-xs uppercase tracking-wider font-display"
+            >
+              Share Your Empty Seats <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* Rider Card: Find a Verified Driver */}
+          <div className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-md relative overflow-hidden text-left hover:border-gazie-yellow transition group">
+            <div className="flex items-center justify-between gap-2 border-b border-dashed border-gazie-navy/15 pb-2.5 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-gazie-paper border border-gazie-navy flex items-center justify-center text-sm font-bold shadow-xs">
+                  👋
+                </div>
+                <div>
+                  <span className="font-mono text-[9px] font-black uppercase text-gazie-navy/60 tracking-wider block">
+                    Daily Commuter / Passenger
+                  </span>
+                  <h3 className="font-display font-black text-sm text-gazie-navy leading-snug">
+                    Find a verified ride going your way.
+                  </h3>
+                </div>
+              </div>
+              <span className="text-[10px] font-mono font-bold bg-gazie-yellow/30 text-gazie-navy px-2 py-0.5 rounded-full border border-gazie-navy/20">
+                Book Day Before
+              </span>
+            </div>
+
+            <p className="text-xs text-gazie-navy/75 leading-relaxed mb-3 font-medium">
+              Heading to work at Secretariat, Berger, or Central Area? Find a verified private driver travelling your direction and lock in your seat the evening before.
+            </p>
+
+            <div className="flex flex-wrap gap-1.5 mb-4 text-[10px] font-mono font-semibold text-gazie-navy/70">
+              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ Verified community drivers</span>
+              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ No rush-hour price surge</span>
+              <span className="bg-gazie-paper px-2 py-0.5 rounded-md border border-gazie-navy/15">✓ Guaranteed seat</span>
+            </div>
+
+            <Link
+              href="/login?role=rider"
+              className="w-full flex items-center justify-center gap-2 bg-gazie-yellow text-gazie-navy border-2 border-gazie-navy font-bold py-3 px-4 rounded-xl hover:bg-gazie-navy hover:text-gazie-paper transition-all duration-200 shadow-sm cursor-pointer text-xs uppercase tracking-wider font-display"
+            >
+              Find a Verified Ride <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+        </div>
+
+        {/* Active Pilot Corridors Quick-Tap Strip */}
+        <div className="w-full bg-white border border-gazie-navy/15 rounded-2xl p-4 shadow-xs space-y-2.5 mb-6 text-left">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 flex items-center gap-1.5">
+              <span>📍</span> Active Lugbe Pilot Corridors
+            </span>
+            <span className="text-[9px] font-mono font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] px-2 py-0.5 rounded-full">
+              Morning & Evening
             </span>
           </div>
-          <p className="text-xs text-gazie-navy/70 leading-relaxed">
-            Carpool with fellow members, neighbors, and colleagues for Sunday services, midweek fellowships, and daily commute corridors.
-          </p>
-          {/* Sunday Fellowship Free Pass Promo Callout */}
-          <div className="bg-[#2D6A4F]/10 border border-[#2D6A4F]/30 rounded-xl p-3.5 flex items-start gap-2.5 text-left">
-            <span className="text-xl shrink-0">🎁</span>
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="font-display font-black text-xs uppercase text-[#2D6A4F] tracking-wide">
-                  Sunday Fellowship Promo: 100% Free Pass (₦0)
-                </span>
-                <span className="text-[9px] bg-[#2D6A4F] text-white px-1.5 py-0.2 rounded font-mono font-bold uppercase">
-                  Active
-                </span>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className="p-2.5 bg-gazie-paper/50 rounded-xl border border-gazie-navy/10 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-gazie-navy block">Lugbe Federal Housing</span>
+                <span className="text-[10px] text-gazie-navy/60">→ Federal Secretariat & CBD</span>
               </div>
-              <p className="text-[11px] text-gazie-navy/80 leading-relaxed font-medium">
-                Platform unlock fees are waived on Sundays for all church services and small cell groups across Abuja. Brethren carpool together with zero platform charges!
-              </p>
+              <span className="font-mono text-[10px] font-bold text-[#2D6A4F]">₦800 - ₦1,000</span>
             </div>
-          </div>
 
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {COMMUNITY_HUBS.map((hub, idx) => (
-              <span
-                key={hub.id}
-                className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-xl border font-bold transition ${
-                  idx === 0
-                    ? 'bg-gazie-yellow text-gazie-navy border-gazie-navy font-black shadow-xs ring-1 ring-gazie-navy/20'
-                    : 'bg-gazie-paper/50 text-gazie-navy/80 border-gazie-navy/20'
-                }`}
-              >
-                <span>{hub.icon}</span>
-                <span>{hub.shortName}</span>
-              </span>
-            ))}
+            <div className="p-2.5 bg-gazie-paper/50 rounded-xl border border-gazie-navy/10 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-gazie-navy block">TradeMore / Airport Road</span>
+                <span className="text-[10px] text-gazie-navy/60">→ Berger & Wuse II</span>
+              </div>
+              <span className="font-mono text-[10px] font-bold text-[#2D6A4F]">₦800 - ₦1,000</span>
+            </div>
           </div>
         </div>
 
-        {/* CTA Section */}
-        <div className="w-full bg-white border-2 border-gazie-navy rounded-2xl p-6 shadow-md space-y-4 mb-8">
-          <div className="space-y-2 text-center border-b border-dashed border-gazie-navy/10 pb-4">
-            <h2 className="font-display font-bold text-lg">Gazie Commute Abuja</h2>
-            <p className="text-xs text-gazie-navy/60 font-semibold uppercase tracking-wider">
-              Abuja Pilot Launch • ₦100 Match Unlock • Direct Driver Settlement
-            </p>
+        {/* Existing Logged-in Commuter Status bar */}
+        {!loading && session && (
+          <div className="w-full bg-white border-2 border-gazie-navy rounded-2xl p-4 shadow-sm mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-left">
+              <BadgeCheck className="w-5 h-5 text-gazie-green" />
+              <div>
+                <span className="text-xs font-bold text-gazie-navy block">Signed in as {profile?.full_name || 'Commuter'}</span>
+                <span className="text-[10px] text-gazie-navy/60 uppercase font-mono">{profile?.role || 'member'}</span>
+              </div>
+            </div>
+            <Link
+              href="/dashboard"
+              className="bg-gazie-navy text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-gazie-navy hover:bg-gazie-yellow hover:text-gazie-navy transition flex items-center gap-1"
+            >
+              Dashboard <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
-
-          {!loading && session ? (
-            <div className="space-y-3">
-              <p className="text-center text-xs font-bold text-gazie-green flex items-center justify-center gap-1.5">
-                <BadgeCheck className="w-4 h-4" /> Welcome back, {profile?.full_name || 'Commuter'}!
-              </p>
-              <Link
-                href="/dashboard"
-                className="w-full flex items-center justify-center gap-2 bg-gazie-navy text-gazie-paper font-bold py-3 px-4 rounded-xl border-2 border-gazie-navy hover:bg-gazie-yellow hover:text-gazie-navy transition-all duration-200 shadow-md cursor-pointer text-center"
-              >
-                Go to Dashboard <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              <Link
-                href="/login?role=rider"
-                className="w-full flex items-center justify-center gap-2 bg-gazie-yellow text-gazie-navy border-2 border-gazie-navy font-bold py-3 px-4 rounded-xl hover:bg-gazie-navy hover:text-gazie-paper transition-all duration-200 shadow-sm cursor-pointer text-center text-sm"
-              >
-                Sign Up as Rider (Book Rides) <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/drivers"
-                className="w-full flex items-center justify-center gap-2 bg-white text-gazie-navy border-2 border-gazie-navy font-bold py-3 px-4 rounded-xl hover:bg-gazie-navy hover:text-gazie-paper transition-all duration-200 shadow-sm cursor-pointer text-center text-sm"
-              >
-                Register as Driver (Offer Routes) <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Live Activity Section */}
         {(() => {
@@ -449,6 +481,10 @@ export default function Home() {
           <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 pt-1 text-[10px]">
             <Link href="/support" className="underline hover:text-gazie-navy text-gazie-navy/70 transition font-semibold">
               Help & Support
+            </Link>
+            <span className="text-gazie-navy/30">&bull;</span>
+            <Link href="/church-rides" className="underline hover:text-gazie-navy text-gazie-navy/70 transition font-semibold">
+              Church Fellowships
             </Link>
             <span className="text-gazie-navy/30">&bull;</span>
             <Link href="/privacy" className="underline hover:text-gazie-navy text-gazie-navy/70 transition font-semibold">

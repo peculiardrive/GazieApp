@@ -22,6 +22,9 @@ interface TicketProps {
   onRate?: () => void;
   onCancel?: () => void;
   onComplete?: () => void;
+  onApprove?: () => void;
+  onReject?: () => void;
+  approveLabel?: string;
   onSelect?: () => void;
   selectLabel?: string;
   showMapPreview?: boolean;
@@ -49,6 +52,9 @@ export default function Ticket({
   onRate,
   onCancel,
   onComplete,
+  onApprove,
+  onReject,
+  approveLabel,
   onSelect,
   selectLabel,
   showMapPreview = false,
@@ -215,19 +221,25 @@ export default function Ticket({
                   {driverPhone && (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs pt-1">
                       <span className="font-semibold text-gazie-navy">Driver Contact:</span>
-                      <div className="flex items-center gap-2">
-                        <a href={`tel:${driverPhone}`} className="font-mono font-bold text-gazie-navy underline flex items-center gap-1">
-                          <Phone className="w-3 h-3 inline" /> {driverPhone}
-                        </a>
-                        <a 
-                          href={`https://wa.me/${driverPhone.replace(/^0/, '234').replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(driverName || 'Driver')}%2C%20I%20am%20your%20matched%20passenger%20on%20Gazie%20Commute`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-2 py-0.5 rounded-lg bg-[#2D6A4F] text-white font-bold text-[10px] flex items-center gap-1 hover:opacity-90 transition"
-                        >
-                          💬 WhatsApp
-                        </a>
-                      </div>
+                      {/^[0-9+\s()-]{7,}$/.test(driverPhone.trim()) ? (
+                        <div className="flex items-center gap-2">
+                          <a href={`tel:${driverPhone}`} className="font-mono font-bold text-gazie-navy underline flex items-center gap-1">
+                            <Phone className="w-3 h-3 inline" /> {driverPhone}
+                          </a>
+                          <a 
+                            href={`https://wa.me/${driverPhone.replace(/^0/, '234').replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(driverName || 'Driver')}%2C%20I%20am%20your%20matched%20passenger%20on%20Gazie%20Commute`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2 py-0.5 rounded-lg bg-[#2D6A4F] text-white font-bold text-[10px] flex items-center gap-1 hover:opacity-90 transition"
+                          >
+                            💬 WhatsApp
+                          </a>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] font-medium text-gazie-navy/60 italic bg-gazie-navy/5 px-2 py-0.5 rounded-md">
+                          {driverPhone}
+                        </span>
+                      )}
                     </div>
                   )}
                 </>
@@ -249,19 +261,25 @@ export default function Ticket({
                   {riderPhone && (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs pt-1">
                       <span className="font-semibold text-gazie-navy">Rider Contact:</span>
-                      <div className="flex items-center gap-2">
-                        <a href={`tel:${riderPhone}`} className="font-mono font-bold text-gazie-navy underline flex items-center gap-1">
-                          <Phone className="w-3 h-3 inline" /> {riderPhone}
-                        </a>
-                        <a 
-                          href={`https://wa.me/${riderPhone.replace(/^0/, '234').replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(riderName || 'Rider')}%2C%20I%20am%20your%20matched%20driver%20on%20Gazie%20Commute`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-2 py-0.5 rounded-lg bg-[#2D6A4F] text-white font-bold text-[10px] flex items-center gap-1 hover:opacity-90 transition"
-                        >
-                          💬 WhatsApp
-                        </a>
-                      </div>
+                      {/^[0-9+\s()-]{7,}$/.test(riderPhone.trim()) ? (
+                        <div className="flex items-center gap-2">
+                          <a href={`tel:${riderPhone}`} className="font-mono font-bold text-gazie-navy underline flex items-center gap-1">
+                            <Phone className="w-3 h-3 inline" /> {riderPhone}
+                          </a>
+                          <a 
+                            href={`https://wa.me/${riderPhone.replace(/^0/, '234').replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(riderName || 'Rider')}%2C%20I%20am%20your%20matched%20driver%20on%20Gazie%20Commute`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2 py-0.5 rounded-lg bg-[#2D6A4F] text-white font-bold text-[10px] flex items-center gap-1 hover:opacity-90 transition"
+                          >
+                            💬 WhatsApp
+                          </a>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] font-medium text-gazie-navy/60 italic bg-gazie-navy/5 px-2 py-0.5 rounded-md">
+                          {riderPhone}
+                        </span>
+                      )}
                     </div>
                   )}
                 </>
@@ -368,9 +386,31 @@ export default function Ticket({
           </div>
 
           {/* Action buttons if available */}
-          {(((status === 'pending' || status === 'matched' || status === 'completed') && (onCancel || onComplete || onRate)) || onSelect) && (
-            <div className="flex flex-wrap gap-2 mt-1">
-              {status === 'matched' && role === 'driver' && onComplete && (
+          {(onApprove || onReject || onComplete || onRate || onCancel || onSelect) && (
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              {/* Driver Approval Action for Pending/Requested Rides */}
+              {onApprove && (
+                <button
+                  onClick={onApprove}
+                  className="flex-1 min-w-[130px] text-[11px] font-bold bg-[#2D6A4F] text-white py-1.5 px-3 rounded-lg border border-[#2D6A4F] hover:bg-gazie-navy hover:text-white transition-all duration-200 cursor-pointer shadow-xs flex items-center justify-center gap-1"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>{approveLabel || 'Approve Passenger'}</span>
+                </button>
+              )}
+
+              {/* Driver Rejection Action */}
+              {onReject && (
+                <button
+                  onClick={onReject}
+                  className="text-[11px] font-bold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 px-3 rounded-lg transition-all duration-200 cursor-pointer"
+                >
+                  Decline
+                </button>
+              )}
+
+              {/* Mark Completed */}
+              {(status === 'matched' || status === 'confirmed') && role === 'driver' && onComplete && (
                 <button
                   onClick={onComplete}
                   className="flex-1 min-w-[120px] text-[11px] font-bold bg-gazie-green text-white py-1.5 rounded-lg border border-gazie-green hover:bg-gazie-navy hover:text-white transition-all duration-200 cursor-pointer"
@@ -378,6 +418,8 @@ export default function Ticket({
                   Mark Completed
                 </button>
               )}
+
+              {/* Rate */}
               {onRate && (
                 <button
                   onClick={onRate}
@@ -391,14 +433,18 @@ export default function Ticket({
                   {isRated ? 'Rated ✓' : 'Rate Commute'}
                 </button>
               )}
+
+              {/* Cancel */}
               {onCancel && (
                 <button
                   onClick={onCancel}
-                  className="flex-1 min-w-[100px] text-[11px] font-bold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 rounded-lg transition-all duration-200 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap"
+                  className="flex-1 min-w-[90px] text-[11px] font-bold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 rounded-lg transition-all duration-200 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap"
                 >
                   Cancel
                 </button>
               )}
+
+              {/* Select */}
               {onSelect && (
                 <div className="flex-1 flex items-center gap-1.5">
                   <button

@@ -68,6 +68,13 @@ export default function DriverDashboard() {
   const [isRecurring, setIsRecurring] = useState(false);
   const [postLoading, setPostLoading] = useState(false);
 
+  // Inline Vehicle Quick-Setup
+  const [editVehicleMake, setEditVehicleMake] = useState('');
+  const [editVehicleModel, setEditVehicleModel] = useState('');
+  const [editVehiclePlate, setEditVehiclePlate] = useState('');
+  const [showVehicleEditor, setShowVehicleEditor] = useState(false);
+  const [vehicleSaving, setVehicleSaving] = useState(false);
+
   const fetchDriverData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -91,6 +98,9 @@ export default function DriverDashboard() {
         setUsualRoute(profileData.usual_route || '');
         setAvailableTimeWindow(profileData.available_time_window || '');
         setDriverFare(String(profileData.driver_fare || 0));
+        setEditVehicleMake(profileData.vehicle_make || '');
+        setEditVehicleModel(profileData.vehicle_model || '');
+        setEditVehiclePlate(profileData.vehicle_plate || '');
         if (profileData.community_name) {
           setPostCommunity(profileData.community_name);
         }
@@ -141,16 +151,23 @@ export default function DriverDashboard() {
         };
       });
 
-      // Sort: matched/confirmed first, completed later
+      // Sort: pending/requested requests first for driver action, confirmed next, completed later
       mappedBookings.sort((a: any, b: any) => {
-        const statusOrder: any = { confirmed: 1, matched: 1, completed: 2, cancelled: 3 };
-        if (statusOrder[a.status] !== statusOrder[b.status]) {
-          return statusOrder[a.status] - statusOrder[b.status];
+        const statusOrder: any = { requested: 0, pending: 0, confirmed: 1, matched: 1, completed: 2, cancelled: 3 };
+        const orderA = statusOrder[a.status] !== undefined ? statusOrder[a.status] : 1;
+        const orderB = statusOrder[b.status] !== undefined ? statusOrder[b.status] : 1;
+        if (orderA !== orderB) {
+          return orderA - orderB;
         }
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
       setBookings(mappedBookings);
+
+      // If brand new driver with no postings and no bookings, guide them to Postings tab
+      if ((postingsData?.length || 0) === 0 && mappedBookings.length === 0) {
+        setActiveTab('postings');
+      }
     } catch (err) {
       console.error('Error loading driver dashboard:', err);
     } finally {
@@ -161,6 +178,41 @@ export default function DriverDashboard() {
   useEffect(() => {
     fetchDriverData();
   }, [router]);
+
+  const handleSaveVehicleInline = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editVehicleMake || !editVehiclePlate) {
+      showToast('Please enter your vehicle make/model and plate number.', 'warning');
+      return;
+    }
+
+    setVehicleSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          vehicle_make: editVehicleMake.trim(),
+          vehicle_model: editVehicleModel.trim(),
+          vehicle_plate: editVehiclePlate.trim().toUpperCase()
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        showToast('Failed to save vehicle details: ' + error.message, 'error');
+      } else {
+        showToast('Vehicle details saved successfully!', 'success');
+        setShowVehicleEditor(false);
+        fetchDriverData();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error saving vehicle', 'error');
+    } finally {
+      setVehicleSaving(false);
+    }
+  };
 
   const handleUpdateAvailability = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -512,6 +564,93 @@ export default function DriverDashboard() {
     );
   };
 
+  const handleApproveBooking = async (bookingId: string) => {
+    try {
+      const booking = bookings.find(b => b.id === bookingId);
+      if (!booking) return;
+
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', bookingId);
+
+      if (error) {
+        showToast('Failed to approve request: ' + error.message, 'error');
+        return;
+      }
+
+      // Decrement available seats on the posting if linked
+      if (booking.ride_posting_id) {
+        const { data: posting } = await supabase
+          .from('ride_postings')
+          .select('seats_available')
+          .eq('id', booking.ride_posting_id)
+          .single();
+
+        if (posting && posting.seats_available > 0) {
+          const nextSeats = posting.seats_available - 1;
+          await supabase
+            .from('ride_postings')
+            .update({
+              seats_available: nextSeats,
+              status: nextSeats === 0 ? 'full' : 'active'
+            })
+            .eq('id', booking.ride_posting_id);
+        }
+      }
+
+      // Notify passenger
+      if (booking.rider_id) {
+        await supabase.from('notifications').insert({
+          user_id: booking.rider_id,
+          title: 'Ride Request Accepted! 🎉',
+          message: `${profile?.full_name || 'Your driver'} approved your seat request for ${booking.pickup} → ${booking.destination} on ${booking.requested_date}. Driver phone number is unlocked.`,
+          read: false
+        });
+      }
+
+      showToast('Passenger approved! Seat confirmed.', 'success');
+      fetchDriverData();
+    } catch (err: any) {
+      showToast(err.message || 'Error approving request', 'error');
+    }
+  };
+
+  const handleRejectBooking = async (bookingId: string) => {
+    openConfirm(
+      'Decline Passenger Request',
+      'Are you sure you want to decline this passenger request? The seat will remain available for other commuters.',
+      async () => {
+        closeConfirm();
+        try {
+          const booking = bookings.find(b => b.id === bookingId);
+          const { error } = await supabase
+            .from('bookings')
+            .update({ status: 'cancelled' })
+            .eq('id', bookingId);
+
+          if (error) {
+            showToast('Failed to decline request: ' + error.message, 'error');
+          } else {
+            if (booking?.rider_id) {
+              await supabase.from('notifications').insert({
+                user_id: booking.rider_id,
+                title: 'Ride Request Declined',
+                message: `Your driver could not accept the booking on ${booking.requested_date}. Please browse other available commutes on your corridor.`,
+                read: false
+              });
+            }
+            showToast('Request declined.', 'info');
+            fetchDriverData();
+          }
+        } catch (err: any) {
+          showToast(err.message || 'Error declining request', 'error');
+        }
+      },
+      true
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gazie-paper items-center justify-center text-gazie-navy">
@@ -649,11 +788,29 @@ export default function DriverDashboard() {
 
             {/* 2. My Passenger Tickets */}
             <section className="space-y-3">
-              <h2 className="font-display font-extrabold text-lg tracking-tight">My Scheduled Commutes</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="font-display font-extrabold text-lg tracking-tight">My Scheduled Commutes</h2>
+                {bookings.filter(b => b.status === 'requested' || b.status === 'pending').length > 0 && (
+                  <span className="bg-[#2D6A4F] text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-full animate-pulse">
+                    {bookings.filter(b => b.status === 'requested' || b.status === 'pending').length} Action Required
+                  </span>
+                )}
+              </div>
+
               {bookings.length === 0 ? (
-                <div className="bg-white border border-dashed border-gazie-navy/20 rounded-2xl p-8 text-center">
-                  <p className="text-xs text-gazie-navy/60 font-semibold">You have no passenger matches assigned yet.</p>
-                  <p className="text-[10px] text-gazie-navy/40 mt-1">Once the administrator matches a rider to your route, it will appear here as a trip ticket.</p>
+                <div className="bg-white border-2 border-dashed border-gazie-navy/20 rounded-2xl p-6 text-center space-y-2.5 shadow-xs">
+                  <span className="text-2xl">🚗</span>
+                  <p className="text-xs text-gazie-navy font-bold">No passenger matches yet.</p>
+                  <p className="text-[11px] text-gazie-navy/60 max-w-xs mx-auto leading-relaxed font-medium">
+                    Post your daily commute from Lugbe or Airport Road. As soon as a verified neighbor requests a seat, their request will appear right here for you to accept.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('postings')}
+                    className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gazie-yellow text-gazie-navy border-2 border-gazie-navy text-xs font-bold hover:bg-gazie-navy hover:text-white transition cursor-pointer font-display uppercase tracking-wider shadow-sm"
+                  >
+                    Post Tomorrow&apos;s Empty Seats →
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -672,6 +829,17 @@ export default function DriverDashboard() {
                       riderPhone={isVerified ? booking.riderPhone : 'Unverified (Contact Hidden)'}
                       partnerRating={booking.partnerRating}
                       isRated={booking.isRated}
+                      onApprove={
+                        (booking.status === 'requested' || booking.status === 'pending')
+                          ? () => handleApproveBooking(booking.id)
+                          : undefined
+                      }
+                      onReject={
+                        (booking.status === 'requested' || booking.status === 'pending')
+                          ? () => handleRejectBooking(booking.id)
+                          : undefined
+                      }
+                      approveLabel="Accept Passenger"
                       onRate={
                         (booking.status === 'completed' || booking.status === 'confirmed' || booking.status === 'matched')
                           ? () => setRatingModalBooking(booking)
@@ -697,6 +865,80 @@ export default function DriverDashboard() {
 
         {activeTab === 'postings' && (
           <>
+            {/* Inline Quick Vehicle Setup if missing */}
+            {(!profile?.vehicle_make || showVehicleEditor) && (
+              <section className="bg-white border-2 border-gazie-navy rounded-2xl p-5 shadow-sm space-y-3 text-left">
+                <div className="flex items-center justify-between border-b border-dashed border-gazie-navy/15 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🚙</span>
+                    <div>
+                      <h3 className="font-display font-black text-xs uppercase tracking-wider text-gazie-navy">
+                        Vehicle Quick-Setup
+                      </h3>
+                      <p className="text-[10px] text-gazie-navy/60 font-semibold">
+                        Needed so passengers can easily identify your car at pickup
+                      </p>
+                    </div>
+                  </div>
+                  {profile?.vehicle_make && (
+                    <button
+                      type="button"
+                      onClick={() => setShowVehicleEditor(false)}
+                      className="text-[10px] font-bold text-gazie-navy/50 hover:text-gazie-navy"
+                    >
+                      Close ✕
+                    </button>
+                  )}
+                </div>
+
+                <form onSubmit={handleSaveVehicleInline} className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Car Make</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Toyota, Honda"
+                        value={editVehicleMake}
+                        onChange={(e) => setEditVehicleMake(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-gazie-paper/30 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none focus:border-gazie-yellow"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Model & Color</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Corolla (Silver)"
+                        value={editVehicleModel}
+                        onChange={(e) => setEditVehicleModel(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-gazie-paper/30 border border-gazie-navy rounded-xl text-xs font-semibold focus:outline-none focus:border-gazie-yellow"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 block">Plate Number</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. ABC-123XY"
+                      value={editVehiclePlate}
+                      onChange={(e) => setEditVehiclePlate(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-gazie-paper/30 border border-gazie-navy rounded-xl text-xs font-mono font-bold uppercase focus:outline-none focus:border-gazie-yellow"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={vehicleSaving}
+                    className="w-full bg-gazie-navy text-white text-xs font-bold py-2 rounded-xl border border-gazie-navy hover:bg-gazie-yellow hover:text-gazie-navy transition disabled:opacity-50 cursor-pointer"
+                  >
+                    {vehicleSaving ? 'Saving Vehicle...' : 'Save Vehicle Details'}
+                  </button>
+                </form>
+              </section>
+            )}
+
             {/* Community Carpooling Notice Card */}
             <div className="bg-amber-50/90 border-2 border-amber-300 rounded-2xl p-4 flex items-start gap-3 text-left">
               <AlertTriangle className="w-5 h-5 text-amber-800 shrink-0 mt-0.5" />
@@ -720,18 +962,41 @@ export default function DriverDashboard() {
               </div>
 
               <form onSubmit={handlePostRide} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">Pickup Area / Departure Landmark</label>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gazie-navy/70 block">
+                      Pickup Area / Departure Landmark
+                    </label>
+                    <span className="text-[9px] text-[#2D6A4F] font-bold">Lugbe Pilot Presets</span>
+                  </div>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gazie-navy/40" />
                     <input
                       type="text"
-                      placeholder="e.g. Total Filling Station"
+                      placeholder="e.g. Lugbe Federal Housing"
                       value={postPickup}
                       onChange={(e) => setPostPickup(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold"
                       required
                     />
+                  </div>
+
+                  {/* One-Tap Lugbe Departure Presets */}
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {['Lugbe Federal Housing', 'TradeMore Estate', 'Total Lugbe (Airport Rd)', 'Pyakasa / Lugbe', 'Voice of Nigeria (VON)'].map((landmark) => (
+                      <button
+                        type="button"
+                        key={landmark}
+                        onClick={() => setPostPickup(landmark)}
+                        className={`text-[9px] px-2 py-0.5 rounded-full border transition cursor-pointer ${
+                          postPickup === landmark
+                            ? 'bg-[#2D6A4F] text-white border-[#2D6A4F] font-bold shadow-2xs'
+                            : 'bg-white text-gazie-navy/70 border-gazie-navy/20 hover:border-gazie-navy hover:text-gazie-navy'
+                        }`}
+                      >
+                        {landmark}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -745,7 +1010,7 @@ export default function DriverDashboard() {
                     <input
                       type="text"
                       list="driver-destinations-list"
-                      placeholder="e.g. Berger, Secretariat, Wuse II, Area 10..."
+                      placeholder="e.g. Federal Secretariat, Berger, Wuse II..."
                       value={postDestination}
                       onChange={(e) => setPostDestination(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 bg-gazie-paper/20 border border-gazie-navy rounded-xl text-xs focus:outline-none focus:border-gazie-yellow font-semibold"
@@ -760,14 +1025,14 @@ export default function DriverDashboard() {
 
                   {/* Quick Select Destination Pills */}
                   <div className="flex flex-wrap gap-1 pt-1">
-                    {['Federal Secretariat', 'Berger', 'Wuse II', 'Banex Plaza', 'Area 1', 'TradeMore', 'Games Village', 'Gwarinpa', 'Summit Bible', 'Dunamis'].map((hub) => (
+                    {['Federal Secretariat', 'Central Business District (CBD)', 'Berger', 'Wuse II', 'Area 11 / Ministry', 'Banex Plaza', 'TradeMore'].map((hub) => (
                       <button
                         type="button"
                         key={hub}
                         onClick={() => setPostDestination(hub)}
                         className={`text-[9px] px-2 py-0.5 rounded-full border transition cursor-pointer ${
                           postDestination === hub
-                            ? 'bg-gazie-navy text-white border-gazie-navy font-bold'
+                            ? 'bg-gazie-navy text-white border-gazie-navy font-bold shadow-2xs'
                             : 'bg-white text-gazie-navy/70 border-gazie-navy/20 hover:border-gazie-navy hover:text-gazie-navy'
                         }`}
                       >
