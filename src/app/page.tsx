@@ -190,10 +190,10 @@ export default function Home() {
                 <span className="text-xl">👋</span>
                 <div>
                   <span className="font-display font-black text-xs sm:text-sm uppercase tracking-wider block">
-                    Find a Verified Ride
+                    Rider
                   </span>
-                  <span className="font-mono text-[10px] text-gazie-navy/70 block group-hover:text-gazie-paper/80 font-normal">
-                    I need a seat to work
+                  <span className="font-sans text-[11px] text-gazie-navy/80 block group-hover:text-gazie-paper/90 font-medium">
+                    (Find a verified ride)
                   </span>
                 </div>
               </div>
@@ -209,10 +209,10 @@ export default function Home() {
                 <span className="text-xl">🚗</span>
                 <div>
                   <span className="font-display font-black text-xs sm:text-sm uppercase tracking-wider block">
-                    Share Empty Seats
+                    Driver
                   </span>
-                  <span className="font-mono text-[10px] text-gazie-paper/75 block group-hover:text-gazie-navy/70 font-normal">
-                    I'm driving & want to offset fuel
+                  <span className="font-sans text-[11px] text-gazie-paper/85 block group-hover:text-gazie-navy/80 font-medium">
+                    (Share empty seats)
                   </span>
                 </div>
               </div>
