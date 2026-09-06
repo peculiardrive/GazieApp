@@ -184,39 +184,33 @@ export default function Home() {
             {/* Rider Button */}
             <Link
               href="/login?role=rider"
-              className="flex items-center justify-between sm:flex-col sm:justify-center gap-2 bg-gazie-yellow text-gazie-navy border-2 border-gazie-navy font-bold p-3.5 rounded-xl hover:bg-gazie-navy hover:text-gazie-paper transition-all duration-200 shadow-sm cursor-pointer group text-left sm:text-center"
+              className="flex items-center justify-between sm:justify-center gap-2 bg-gazie-yellow text-gazie-navy border-2 border-gazie-navy font-bold p-3.5 rounded-xl hover:bg-gazie-navy hover:text-gazie-paper transition-all duration-200 shadow-sm cursor-pointer group text-left sm:text-center"
             >
-              <div className="flex items-center gap-2.5 sm:flex-col sm:gap-1">
-                <span className="text-xl">👋</span>
-                <div>
-                  <span className="font-display font-black text-xs sm:text-sm uppercase tracking-wider block">
-                    Rider
-                  </span>
-                  <span className="font-sans text-[11px] text-gazie-navy/80 block group-hover:text-gazie-paper/90 font-medium">
-                    (Find a verified ride)
-                  </span>
-                </div>
+              <div>
+                <span className="font-display font-black text-xs sm:text-sm uppercase tracking-wider block">
+                  Rider
+                </span>
+                <span className="font-sans text-[11px] text-gazie-navy/80 block group-hover:text-gazie-paper/90 font-medium">
+                  (Find a verified ride)
+                </span>
               </div>
-              <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5 sm:hidden" />
             </Link>
 
             {/* Driver Button */}
             <Link
               href="/login?role=driver"
-              className="flex items-center justify-between sm:flex-col sm:justify-center gap-2 bg-gazie-navy text-gazie-paper border-2 border-gazie-navy font-bold p-3.5 rounded-xl hover:bg-gazie-yellow hover:text-gazie-navy transition-all duration-200 shadow-sm cursor-pointer group text-left sm:text-center"
+              className="flex items-center justify-between sm:justify-center gap-2 bg-gazie-navy text-gazie-paper border-2 border-gazie-navy font-bold p-3.5 rounded-xl hover:bg-gazie-yellow hover:text-gazie-navy transition-all duration-200 shadow-sm cursor-pointer group text-left sm:text-center"
             >
-              <div className="flex items-center gap-2.5 sm:flex-col sm:gap-1">
-                <span className="text-xl">🚗</span>
-                <div>
-                  <span className="font-display font-black text-xs sm:text-sm uppercase tracking-wider block">
-                    Driver
-                  </span>
-                  <span className="font-sans text-[11px] text-gazie-paper/85 block group-hover:text-gazie-navy/80 font-medium">
-                    (Share empty seats)
-                  </span>
-                </div>
+              <div>
+                <span className="font-display font-black text-xs sm:text-sm uppercase tracking-wider block">
+                  Driver
+                </span>
+                <span className="font-sans text-[11px] text-gazie-paper/85 block group-hover:text-gazie-navy/80 font-medium">
+                  (Share empty seats)
+                </span>
               </div>
-              <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5 sm:hidden" />
             </Link>
           </div>
 
