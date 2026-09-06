@@ -161,10 +161,7 @@ export default function Home() {
         {/* Hero Section */}
         <div className="text-center space-y-3.5 mb-6">
           <h1 className="font-display font-extrabold text-3xl sm:text-5xl leading-tight tracking-tight text-gazie-navy">
-            Commute Together from Lugbe. <br />
-            <span className="bg-gazie-navy text-gazie-paper px-2.5 py-0.5 rounded-lg inline-block mt-1">
-              Verified & Fuel-Smart.
-            </span>
+            Commute Together to Work.
           </h1>
           <p className="font-sans text-xs sm:text-sm text-gazie-navy/75 leading-relaxed max-w-md mx-auto font-medium">
             <strong className="text-gazie-navy font-bold">Not a taxi or on-demand cab app.</strong> Gazie connects verified neighbors already travelling the Lugbe corridor to Central Area & Secretariat so drivers offset fuel and riders commute safely.
