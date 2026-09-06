@@ -228,11 +228,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Active Pilot Corridors Quick-Tap Strip */}
+        {/* Active Corridors Quick-Tap Strip */}
         <div className="w-full bg-white border border-gazie-navy/15 rounded-2xl p-4 shadow-xs space-y-2.5 mb-6 text-left">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-gazie-navy/70 flex items-center gap-1.5">
-              <span>📍</span> Active Lugbe Pilot Corridors
+              <span>📍</span> Active Corridors
             </span>
             <span className="text-[9px] font-mono font-bold bg-[#2D6A4F]/10 text-[#2D6A4F] px-2 py-0.5 rounded-full">
               Morning & Evening
@@ -309,9 +309,11 @@ export default function Home() {
                   ) : (
                     <div className="text-center py-2 space-y-1.5">
                       <span className="text-[10px] font-bold text-gazie-navy opacity-60 uppercase block tracking-wider">TODAY'S ACTIVITY</span>
-                      <span className="font-display font-extrabold text-base text-gazie-navy block leading-tight">
-                        Be one of the first to join Gazie Commute
-                      </span>
+                      <Link href="/signup" className="group block">
+                        <span className="font-display font-extrabold text-base text-gazie-navy block leading-tight group-hover:text-[#2D6A4F] transition">
+                          Be one of the first to join Gazie Commute
+                        </span>
+                      </Link>
                       <span className="text-[10px] text-gazie-navy/60 italic block font-medium">No rides matched yet today</span>
                     </div>
                   )}
@@ -347,11 +349,16 @@ export default function Home() {
                 </div>
 
                 {/* Bottom rotating ticker */}
-                <div className="p-4 bg-gazie-paper/30 flex items-center justify-center text-center px-4 min-h-[56px] select-none">
-                  <p key={tickerIndex} className="font-mono text-[10px] font-bold text-[#2D6A4F] animate-fadeIn leading-relaxed">
-                    {tickerText}
+                <Link
+                  href="/signup"
+                  className="p-4 bg-gazie-paper/30 flex items-center justify-center text-center px-4 min-h-[56px] select-none hover:bg-gazie-paper/60 transition group cursor-pointer"
+                  title="Click to sign up"
+                >
+                  <p key={tickerIndex} className="font-mono text-[10px] font-bold text-[#2D6A4F] animate-fadeIn leading-relaxed group-hover:underline flex items-center justify-center gap-1.5">
+                    <span>{tickerText}</span>
+                    <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5 shrink-0" />
                   </p>
-                </div>
+                </Link>
 
               </div>
             </section>
