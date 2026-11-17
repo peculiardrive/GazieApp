@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { supabase, isMock } from '@/lib/supabase';
 import { ShieldCheck, Car, Users, Calendar, ArrowRight, ShieldAlert, BadgeCheck, Activity } from 'lucide-react';
 import Navbar from '@/components/ui/Navbar';
-import CommuteJourneyAnimation from '@/components/CommuteJourneyAnimation';
 
 export default function Home() {
   const [session, setSession] = useState<any>(null);
@@ -167,6 +166,12 @@ export default function Home() {
           <p className="font-sans text-xs sm:text-sm text-gazie-navy/75 leading-relaxed max-w-md mx-auto font-medium">
             <strong className="text-gazie-navy font-bold">Not a taxi or on-demand cab app.</strong> Gazie connects verified neighbors already travelling the Lugbe corridor to Central Area & Secretariat so drivers offset fuel and riders commute safely.
           </p>
+          <Link
+            href="/how-it-works"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border-2 border-gazie-navy bg-white px-4 text-sm font-bold text-gazie-navy shadow-sm transition hover:bg-gazie-yellow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D6A4F] focus-visible:ring-offset-2"
+          >
+            See how Gazie works <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
 
         {/* The Two Essential Actions: Driver vs Rider Grouped Together */}
@@ -228,8 +233,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        <CommuteJourneyAnimation />
 
         {/* Active Corridors Quick-Tap Strip */}
         <div className="w-full bg-white border border-gazie-navy/15 rounded-2xl p-4 shadow-xs space-y-2.5 mb-6 text-left">
