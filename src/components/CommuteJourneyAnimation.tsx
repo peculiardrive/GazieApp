@@ -301,35 +301,38 @@ export default function CommuteJourneyAnimation() {
              </g>
 
             {/* Intermediate landmarks appear when the rider joins the story. */}
-            {stage >= 1 && <g transform="translate(370, 150)">
-              <circle r="6" fill="#FFFFFF" stroke="#557064" strokeWidth="2" />
-              <text
-                x="0"
-                y="-14"
-                textAnchor="middle"
-                fill="#557064"
-                fontSize="9"
-                fontWeight="700"
-                fontFamily="system-ui, sans-serif"
-              >
-                AIRPORT ROAD
-              </text>
-            </g>
-
-            <g transform="translate(530, 98)">
-              <circle r="5" fill="#CBD8D0" stroke="#557064" strokeWidth="1.5" />
-              <text
-                x="0"
-                y="-13"
-                textAnchor="middle"
-                fill="#557064"
-                fontSize="9"
-                fontWeight="600"
-                fontFamily="system-ui, sans-serif"
-              >
-                City Gate
-              </text>
-            </g>}
+            {stage >= 1 && (
+              <>
+                <g transform="translate(370, 150)">
+                  <circle r="6" fill="#FFFFFF" stroke="#557064" strokeWidth="2" />
+                  <text
+                    x="0"
+                    y="-14"
+                    textAnchor="middle"
+                    fill="#557064"
+                    fontSize="9"
+                    fontWeight="700"
+                    fontFamily="system-ui, sans-serif"
+                  >
+                    AIRPORT ROAD
+                  </text>
+                </g>
+                <g transform="translate(530, 98)">
+                  <circle r="5" fill="#CBD8D0" stroke="#557064" strokeWidth="1.5" />
+                  <text
+                    x="0"
+                    y="-13"
+                    textAnchor="middle"
+                    fill="#557064"
+                    fontSize="9"
+                    fontWeight="600"
+                    fontFamily="system-ui, sans-serif"
+                  >
+                    City Gate
+                  </text>
+                </g>
+              </>
+            )}
 
             {/* 4. Central Area / Federal Secretariat (Destination) */}
             <g transform="translate(670, 55)">
