@@ -138,7 +138,6 @@ export default function CommuteJourneyAnimation() {
               strokeWidth="4"
               strokeLinecap="round"
               strokeDasharray="2 10"
-              className="motion-safe:animate-[route-dash_18s_linear_infinite]"
             />
 
             <text x="94" y="235" fill="#14213D" fontSize="13" fontWeight="700">LUGBE</text>
