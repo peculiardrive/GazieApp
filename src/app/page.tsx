@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase, isMock } from '@/lib/supabase';
 import { ShieldCheck, Car, Users, Calendar, ArrowRight, ShieldAlert, BadgeCheck, Activity } from 'lucide-react';
 import Navbar from '@/components/ui/Navbar';
+import CommuteJourneyAnimation from '@/components/CommuteJourneyAnimation';
 
 export default function Home() {
   const [session, setSession] = useState<any>(null);
@@ -227,6 +228,8 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        <CommuteJourneyAnimation />
 
         {/* Active Corridors Quick-Tap Strip */}
         <div className="w-full bg-white border border-gazie-navy/15 rounded-2xl p-4 shadow-xs space-y-2.5 mb-6 text-left">
