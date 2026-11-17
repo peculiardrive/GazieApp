@@ -171,9 +171,8 @@ export default function CommuteJourneyAnimation() {
             <span className="font-mono text-[10px] font-black uppercase tracking-widest text-[#2D6A4F]">
               How It Works
             </span>
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#2D6A4F]" />
             <span className="font-mono text-[10px] text-gazie-navy/60 font-bold">
-              Abuja Pilot Corridor
+              Abuja
             </span>
           </div>
           <h2
@@ -184,12 +183,9 @@ export default function CommuteJourneyAnimation() {
           </h2>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-gazie-navy/15 bg-white px-2.5 py-1 font-mono text-[10px] font-bold text-gazie-navy shadow-xs">
-            <span className="h-2 w-2 rounded-full bg-gazie-yellow animate-pulse" />
-            FICTIONAL DEMO ROUTE
-          </span>
-        </div>
+        <span className="font-mono text-[9px] font-bold uppercase text-gazie-navy/45">
+          Sample route
+        </span>
       </div>
 
       {/* SVG Canvas Container */}
@@ -302,21 +298,10 @@ export default function CommuteJourneyAnimation() {
               >
                 LUGBE
               </text>
-              <text
-                x="0"
-                y="41"
-                textAnchor="middle"
-                fill="#557064"
-                fontSize="8"
-                fontWeight="600"
-                fontFamily="system-ui, sans-serif"
-              >
-                Start Point
-              </text>
-            </g>
+             </g>
 
-            {/* 2. Airport Road Corridor / Pickup Waypoint */}
-            <g transform="translate(370, 150)">
+            {/* Intermediate landmarks appear when the rider joins the story. */}
+            {stage >= 1 && <g transform="translate(370, 150)">
               <circle r="6" fill="#FFFFFF" stroke="#557064" strokeWidth="2" />
               <text
                 x="0"
@@ -331,7 +316,6 @@ export default function CommuteJourneyAnimation() {
               </text>
             </g>
 
-            {/* 3. City Gate Waypoint */}
             <g transform="translate(530, 98)">
               <circle r="5" fill="#CBD8D0" stroke="#557064" strokeWidth="1.5" />
               <text
@@ -345,7 +329,7 @@ export default function CommuteJourneyAnimation() {
               >
                 City Gate
               </text>
-            </g>
+            </g>}
 
             {/* 4. Central Area / Federal Secretariat (Destination) */}
             <g transform="translate(670, 55)">
@@ -362,18 +346,7 @@ export default function CommuteJourneyAnimation() {
               >
                 CENTRAL AREA
               </text>
-              <text
-                x="0"
-                y="-13"
-                textAnchor="middle"
-                fill="#557064"
-                fontSize="8"
-                fontWeight="600"
-                fontFamily="system-ui, sans-serif"
-              >
-                Secretariat & CBD
-              </text>
-            </g>
+             </g>
 
             {/* Stage 2 & 3: Rider Location Marker and Connecting Match Beam */}
             {stage >= 1 && (
@@ -536,10 +509,10 @@ export default function CommuteJourneyAnimation() {
           </svg>
 
           {/* Floating Context Pills Overlay on SVG Map */}
-          <div className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-lg border border-gazie-navy/15 bg-white/95 px-2.5 py-1 text-[10px] font-bold text-gazie-navy shadow-xs backdrop-blur-xs">
+          {stage > 0 && <div className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-lg border border-gazie-navy/15 bg-white/95 px-2.5 py-1 text-[10px] font-bold text-gazie-navy shadow-xs backdrop-blur-xs">
             <Car className="h-3 w-3 text-[#2D6A4F]" />
             <span>{activeStage.statusPill}</span>
-          </div>
+          </div>}
 
           <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1.5 rounded-lg border border-gazie-navy/15 bg-white/95 px-2.5 py-1 text-[10px] font-bold shadow-xs backdrop-blur-xs">
             {stage >= 2 ? (
