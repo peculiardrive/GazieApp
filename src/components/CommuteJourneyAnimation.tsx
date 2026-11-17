@@ -697,7 +697,7 @@ export default function CommuteJourneyAnimation() {
       {/* Safety & Fictional Data Note */}
       <div className="border-t border-dashed border-gazie-navy/10 px-3 py-2 sm:px-6">
         <p className="text-[10px] leading-relaxed text-gazie-navy/55 font-medium">
-          Demonstration only. Fictional sample corridor with simulated neighbour matching. No live customer records, vehicle locations, or financial transactions are used.
+          Demonstration only. This sample corridor uses simulated neighbour matching, with no live customer records, vehicle locations, or financial transactions.
         </p>
       </div>
     </section>
