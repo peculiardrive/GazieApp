@@ -165,7 +165,7 @@ export default function CommuteJourneyAnimation({ compact = false }: { compact?:
       className={`${compact ? "mb-0 flex h-full min-h-0 flex-col rounded-xl" : "mb-6 rounded-2xl"} w-full overflow-hidden border-2 border-gazie-navy bg-white text-left shadow-md transition-all`}
     >
       {/* Header bar */}
-      <div className={`flex flex-wrap items-center justify-between gap-2 border-b-2 border-gazie-navy/10 bg-gazie-paper/50 ${compact ? "px-3 py-2 sm:px-4" : "px-4 py-3.5 sm:px-6"}`}>
+      <div className={`${compact ? "hidden" : "flex flex-wrap items-center justify-between gap-2 border-b-2 border-gazie-navy/10 bg-gazie-paper/50 px-4 py-3.5 sm:px-6"}`}>
         <div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-[10px] font-black uppercase tracking-widest text-[#2D6A4F]">
