@@ -106,7 +106,7 @@ const CAR_POSITIONS = [
 
 const STAGE_INTERVAL_MS = 3600;
 
-export default function CommuteJourneyAnimation() {
+export default function CommuteJourneyAnimation({ compact = false }: { compact?: boolean }) {
   const [stage, setStage] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -162,10 +162,10 @@ export default function CommuteJourneyAnimation() {
   return (
     <section
       aria-labelledby="journey-animation-title"
-      className="mb-6 w-full overflow-hidden rounded-2xl border-2 border-gazie-navy bg-white text-left shadow-md transition-all"
+      className={`${compact ? "mb-0 flex h-full min-h-0 flex-col rounded-xl" : "mb-6 rounded-2xl"} w-full overflow-hidden border-2 border-gazie-navy bg-white text-left shadow-md transition-all`}
     >
       {/* Header bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-gazie-navy/10 bg-gazie-paper/50 px-4 py-3.5 sm:px-6">
+      <div className={`flex flex-wrap items-center justify-between gap-2 border-b-2 border-gazie-navy/10 bg-gazie-paper/50 ${compact ? "px-3 py-2 sm:px-4" : "px-4 py-3.5 sm:px-6"}`}>
         <div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-[10px] font-black uppercase tracking-widest text-[#2D6A4F]">
@@ -177,7 +177,7 @@ export default function CommuteJourneyAnimation() {
           </div>
           <h2
             id="journey-animation-title"
-            className="font-display text-xl sm:text-2xl font-black tracking-tight text-gazie-navy mt-0.5"
+            className={`font-display font-black tracking-tight text-gazie-navy mt-0.5 ${compact ? "text-base sm:text-lg" : "text-xl sm:text-2xl"}`}
           >
             Your Route. Shared.
           </h2>
@@ -189,8 +189,8 @@ export default function CommuteJourneyAnimation() {
       </div>
 
       {/* SVG Canvas Container */}
-      <div className="px-3 pt-3 sm:px-5 sm:pt-4">
-        <div className="relative overflow-hidden rounded-xl border-2 border-gazie-navy/15 bg-[#F4F8F5]">
+      <div className={`px-3 sm:px-4 ${compact ? "pt-2" : "pt-3 sm:pt-4"}`}>
+        <div className="relative mx-auto max-w-[760px] overflow-hidden rounded-xl border-2 border-gazie-navy/15 bg-[#F4F8F5]">
           <svg
             viewBox="0 0 760 260"
             className="block h-auto w-full select-none"
@@ -531,7 +531,7 @@ export default function CommuteJourneyAnimation() {
       </div>
 
       {/* 5-Stage Interactive Progress Indicator */}
-      <div className="px-3 pt-4 sm:px-6">
+      <div className={`px-3 sm:px-6 ${compact ? "pt-2" : "pt-4"}`}>
         <ol aria-label="Journey stages" className="grid grid-cols-5 gap-1.5 sm:gap-2">
           {STAGES.map((s, index) => {
             const isCurrent = stage === index;
@@ -577,7 +577,7 @@ export default function CommuteJourneyAnimation() {
       <div
         aria-live="polite"
         aria-atomic="true"
-        className="px-3 py-3.5 sm:px-6 min-h-[82px] flex flex-col justify-center"
+        className={`flex flex-col justify-center px-3 sm:px-6 ${compact ? "min-h-[60px] py-2" : "min-h-[82px] py-3.5"}`}
       >
         <div className="flex items-center gap-2">
           <span className="rounded bg-gazie-yellow/30 px-1.5 py-0.5 font-mono text-[9px] font-black uppercase text-gazie-navy">
@@ -594,30 +594,31 @@ export default function CommuteJourneyAnimation() {
 
       {/* Stage 5 Animated Benefit Cards */}
       {stage === 4 && (
-        <div className="space-y-3 px-3 pb-3 sm:px-6 sm:pb-4 motion-safe:animate-fadeIn">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className={`motion-safe:animate-fadeIn ${compact ? "space-y-2 px-3 pb-2 sm:px-4" : "space-y-3 px-3 pb-3 sm:px-6 sm:pb-4"}`}>
+          <div className={`grid gap-2.5 ${compact ? "grid-cols-3" : "grid-cols-1 sm:grid-cols-3"}`}>
+          
             {BENEFITS.map((benefit, idx) => {
               const IconComponent = benefit.icon;
               return (
                 <div
                   key={benefit.title}
-                  className={`rounded-xl border p-3.5 transition-all shadow-xs ${benefit.cardBg}`}
+                  className={`rounded-lg border transition-all shadow-xs ${compact ? "p-2" : "rounded-xl p-3.5"} ${benefit.cardBg}`}
                   style={{
                     animationDelay: reducedMotion ? "0ms" : `${idx * 120}ms`,
                   }}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className={`flex items-center justify-between gap-1 ${compact ? "mb-1" : "mb-2"}`}>
                     <span
-                      className={`rounded-md px-2 py-0.5 font-mono text-[9px] font-black uppercase tracking-wider ${benefit.pillBg}`}
+                      className={`rounded-md px-1.5 py-0.5 font-mono text-[9px] font-black uppercase ${compact ? "tracking-normal" : "tracking-wider px-2"} ${benefit.pillBg}`}
                     >
                       {benefit.title}
                     </span>
-                    <IconComponent className={`h-4 w-4 shrink-0 ${benefit.iconColor}`} />
+                    <IconComponent className={`shrink-0 ${compact ? "h-3.5 w-3.5" : "h-4 w-4"} ${benefit.iconColor}`} />
                   </div>
-                  <h4 className="font-display text-xs sm:text-sm font-bold text-gazie-navy">
+                  <h4 className={`font-display font-bold text-gazie-navy ${compact ? "text-[10px] leading-tight sm:text-xs" : "text-xs sm:text-sm"}`}>
                     {benefit.subtitle}
                   </h4>
-                  <p className="mt-1 text-[11px] leading-relaxed text-gazie-navy/70 font-medium">
+                  <p className={`mt-1 text-[11px] leading-relaxed text-gazie-navy/70 font-medium ${compact ? "hidden" : ""}`}>
                     {benefit.detail}
                   </p>
                 </div>
@@ -626,8 +627,8 @@ export default function CommuteJourneyAnimation() {
           </div>
 
           {/* Concluding Gazie Commute Signature Tagline */}
-          <div className="rounded-xl border-2 border-[#2D6A4F] bg-[#2D6A4F]/10 p-3 text-center">
-            <p className="font-display text-sm sm:text-base font-black tracking-tight text-[#2D6A4F]">
+          <div className={`rounded-xl border-2 border-[#2D6A4F] bg-[#2D6A4F]/10 text-center ${compact ? "p-1.5" : "p-3"}`}>
+            <p className={`font-display font-black tracking-tight text-[#2D6A4F] ${compact ? "text-xs" : "text-sm sm:text-base"}`}>
               Gazie Commute. Your Route. Shared.
             </p>
           </div>
@@ -635,7 +636,7 @@ export default function CommuteJourneyAnimation() {
       )}
 
       {/* Controls Bar: Play / Pause, Previous, Next, Restart */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t-2 border-gazie-navy/10 bg-gazie-paper/30 px-3 py-3 sm:px-6">
+      <div className={`flex flex-wrap items-center justify-between gap-2 border-t-2 border-gazie-navy/10 bg-gazie-paper/30 px-3 sm:px-4 ${compact ? "py-2" : "py-3 sm:px-6"}`}>
         <div className="flex items-center gap-2">
           {/* Previous Button */}
           <button
@@ -643,10 +644,11 @@ export default function CommuteJourneyAnimation() {
             onClick={() => goToStage(stage - 1)}
             disabled={stage === 0}
             aria-label="Previous stage"
-            className="inline-flex min-h-[44px] items-center gap-1 rounded-xl border border-gazie-navy/20 bg-white px-3 text-xs font-bold text-gazie-navy shadow-xs transition-colors hover:bg-gazie-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-40"
+            title="Previous stage"
+            className={`inline-flex min-h-[44px] items-center justify-center gap-1 rounded-xl border border-gazie-navy/20 bg-white text-xs font-bold text-gazie-navy shadow-xs transition-colors hover:bg-gazie-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-40 ${compact ? "w-11 px-2" : "px-3"}`}
           >
             <ChevronLeft className="h-4 w-4" />
-            <span>Previous</span>
+            <span className={compact ? "sr-only" : ""}>Previous</span>
           </button>
 
           {/* Play / Pause Toggle Button */}
@@ -675,9 +677,10 @@ export default function CommuteJourneyAnimation() {
             onClick={() => goToStage(stage + 1)}
             disabled={stage === STAGES.length - 1}
             aria-label="Next stage"
-            className="inline-flex min-h-[44px] items-center gap-1 rounded-xl border border-gazie-navy/20 bg-white px-3 text-xs font-bold text-gazie-navy shadow-xs transition-colors hover:bg-gazie-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-40"
+            title="Next stage"
+            className={`inline-flex min-h-[44px] items-center justify-center gap-1 rounded-xl border border-gazie-navy/20 bg-white text-xs font-bold text-gazie-navy shadow-xs transition-colors hover:bg-gazie-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D6A4F] disabled:cursor-not-allowed disabled:opacity-40 ${compact ? "w-11 px-2" : "px-3"}`}
           >
-            <span>Next</span>
+            <span className={compact ? "sr-only" : ""}>Next</span>
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -687,15 +690,16 @@ export default function CommuteJourneyAnimation() {
           type="button"
           onClick={handleRestart}
           aria-label="Restart journey animation"
-          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-gazie-navy/20 bg-white px-3 text-xs font-bold text-gazie-navy shadow-xs transition-colors hover:bg-gazie-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D6A4F]"
+          title="Restart journey animation"
+          className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-gazie-navy/20 bg-white text-xs font-bold text-gazie-navy shadow-xs transition-colors hover:bg-gazie-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D6A4F] ${compact ? "w-11 justify-center px-2" : "px-3"}`}
         >
           <RotateCcw className="h-3.5 w-3.5" />
-          <span>Restart</span>
+          <span className={compact ? "sr-only" : ""}>Restart</span>
         </button>
       </div>
 
       {/* Safety & Fictional Data Note */}
-      <div className="border-t border-dashed border-gazie-navy/10 px-3 py-2 sm:px-6">
+      <div className={`border-t border-dashed border-gazie-navy/10 px-3 sm:px-6 ${compact ? "hidden" : "py-2"}`}>
         <p className="text-[10px] leading-relaxed text-gazie-navy/55 font-medium">
           Demonstration only. This sample corridor uses simulated neighbour matching, with no live customer records, vehicle locations, or financial transactions.
         </p>
